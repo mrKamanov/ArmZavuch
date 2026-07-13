@@ -1,0 +1,148 @@
+{
+  "name": "8 класс",
+  "gradeFrom": 8,
+  "gradeTo": 8,
+  "isBuiltIn": true,
+  "items": [
+    {
+      "subjectName": "Алгебра",
+      "hoursPerWeek": 3.0,
+      "difficultyScore": 9.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Биология",
+      "hoursPerWeek": 2.0,
+      "difficultyScore": 7.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Вероятность и Статистика",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 9.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "География",
+      "hoursPerWeek": 2.0,
+      "difficultyScore": 6.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Геометрия",
+      "hoursPerWeek": 2.0,
+      "difficultyScore": 10.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Дкп",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 8.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Иностранный язык",
+      "hoursPerWeek": 3.0,
+      "difficultyScore": 8.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Информатика",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 7.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "История",
+      "hoursPerWeek": 2.0,
+      "difficultyScore": 8.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Литература",
+      "hoursPerWeek": 2.0,
+      "difficultyScore": 4.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Музыка",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 1.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Обществознание",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 5.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Основы Безопасности и Защиты Родины",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 3.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Разговоры о важном",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 0.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Русский язык",
+      "hoursPerWeek": 3.0,
+      "difficultyScore": 7.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Труд",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 1.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Факультатив",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 0.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Физика",
+      "hoursPerWeek": 2.0,
+      "difficultyScore": 9.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Физическая культура",
+      "hoursPerWeek": 2.0,
+      "difficultyScore": 2.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Химия",
+      "hoursPerWeek": 2.0,
+      "difficultyScore": 10.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    }
+  ]
+}

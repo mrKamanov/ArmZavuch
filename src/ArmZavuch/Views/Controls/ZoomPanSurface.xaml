@@ -1,0 +1,23 @@
+<UserControl x:Class="ArmZavuch.Views.Controls.ZoomPanSurface"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root">
+    <Border x:Name="Viewport" ClipToBounds="True" Background="#FAFBFC"
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6"
+            PreviewMouseWheel="Viewport_PreviewMouseWheel"
+            PreviewMouseDown="Viewport_PreviewMouseDown"
+            PreviewMouseMove="Viewport_PreviewMouseMove"
+            PreviewMouseUp="Viewport_PreviewMouseUp">
+        <Grid x:Name="ContentHost" HorizontalAlignment="Left" VerticalAlignment="Top"
+              RenderTransformOrigin="0,0">
+            <Grid.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform x:Name="ScaleTransform"/>
+                    <TranslateTransform x:Name="TranslateTransform"/>
+                </TransformGroup>
+            </Grid.RenderTransform>
+            <ContentPresenter Content="{Binding ZoomContent, ElementName=Root}"
+                              DataContext="{Binding DataContext, ElementName=Root}"/>
+        </Grid>
+    </Border>
+</UserControl>

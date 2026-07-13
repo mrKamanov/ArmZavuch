@@ -1,0 +1,2072 @@
+<UserControl x:Class="ArmZavuch.Views.DirectoriesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ArmZavuch.Views.Converters"
+             xmlns:helpers="clr-namespace:ArmZavuch.Views.Helpers"
+             xmlns:controls="clr-namespace:ArmZavuch.Views.Controls"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch">
+    <UserControl.InputBindings>
+        <KeyBinding Key="Z" Modifiers="Ctrl" Command="{Binding UndoLastCommand}"/>
+        <KeyBinding Key="Escape" Command="{Binding ClearCheckboxSelectionCommand}"/>
+    </UserControl.InputBindings>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ModuleHeaderBarStyle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Справочники" Style="{StaticResource ModulePageTitleStyle}"/>
+                    <TextBlock Text="{Binding SelectionHint}" VerticalAlignment="Center" Margin="14,0,0,0"
+                               Foreground="{StaticResource MutedTextBrush}" FontSize="12"/>
+                </StackPanel>
+                <Border Grid.Column="1" Style="{StaticResource ToolbarButtonGroupStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                Command="{Binding UndoLastCommand}"
+                                IsEnabled="{Binding CanUndo}"
+                                ToolTip="Отменить последнее действие (Ctrl+Z)">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="↩" FontSize="15" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Отменить" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Border Style="{StaticResource ToolbarGroupSeparatorStyle}"/>
+                        <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                Command="{Binding LoadCommand}"
+                                ToolTip="Обновить данные из базы">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="↻" FontSize="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Обновить" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+        <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" Margin="0,8,0,0"
+                   Foreground="{StaticResource MutedTextBrush}"/>
+
+        <TabControl Grid.Row="1" SelectedIndex="{Binding ActiveTabIndex}"
+                    Style="{StaticResource ModuleTabControlStyle}"
+                    VerticalAlignment="Stretch">
+            <TabControl.Resources>
+                <Style TargetType="TabItem" BasedOn="{StaticResource ModuleTabItemStyle}"/>
+            </TabControl.Resources>
+            <TabItem Header="Здания">
+                <controls:ScrollableTabContent Padding="12,8,12,16">
+                    <StackPanel>
+                        <Border Style="{StaticResource CrudFormPanelStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Здание" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" MinWidth="180"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Название" Style="{StaticResource FormFieldLabelStyle}"/>
+                                        <TextBox Text="{Binding NewBuildingName, UpdateSourceTrigger=PropertyChanged}"
+                                                 ToolTip="Название здания"
+                                                 helpers:DuplicateHighlight.IsDuplicate="{Binding IsNewBuildingDuplicate}"/>
+                                    </StackPanel>
+                                    <WrapPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="12,0,0,0">
+                                        <Button Content="{Binding SaveBuildingLabel}" Command="{Binding SaveBuildingCommand}"
+                                                Margin="0,0,8,0"/>
+                                        <Button Content="Удалить" Command="{Binding DeleteBuildingCommand}" Margin="0,0,8,0"
+                                                Style="{StaticResource SecondaryButtonStyle}"/>
+                                        <Button Content="Отмена" Command="{Binding CancelEditCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"/>
+                                    </WrapPanel>
+                                </Grid>
+
+                                <controls:BuildingColorPicker Margin="0,10,0,0"
+                                    SelectedColorHex="{Binding NewBuildingColor, UpdateSourceTrigger=PropertyChanged}"
+                                    ColorChoices="{Binding BuildingColorChoices}"
+                                    BlockedColorHexes="{Binding BlockedBuildingColorHexes}"
+                                    PickColorCommand="{Binding SelectBuildingColorCommand}"/>
+
+                                <TextBlock Text="{Binding NewBuildingDuplicateHint}" FontSize="10" Foreground="#DC2626"
+                                           Margin="0,8,0,0"
+                                           Visibility="{Binding NewBuildingDuplicateHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
+                                            Visibility="{Binding NewBuildingSuggestionHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}">
+                                    <TextBlock Text="{Binding NewBuildingSuggestionHint}" FontSize="10" Foreground="#B45309"/>
+                                    <Button Content="Применить" Style="{StaticResource SmallButtonStyle}" Margin="8,0,0,0"
+                                            Command="{Binding ApplyNewBuildingSuggestionCommand}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource CrudFormPanelStyle}" Margin="0,8,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Переходы между зданиями" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding BuildingRoutesHint}" FontSize="11"
+                                           Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                <Border Style="{StaticResource DirectoriesTableCardStyle}" Margin="0"
+                                        Visibility="{Binding CanEditBuildingRoutes, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                    <DataGrid ItemsSource="{Binding BuildingRouteMatrix}" AutoGenerateColumns="False"
+                                              Style="{StaticResource BuildingRouteDataGridStyle}"
+                                              CanUserAddRows="False" CanUserDeleteRows="False"
+                                              HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                              MaxHeight="220" Margin="0">
+                                        <DataGrid.Columns>
+                                            <DataGridTemplateColumn Header="Маршрут" Width="*" IsReadOnly="True">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <ContentControl Content="{Binding}"
+                                                                        ContentTemplate="{StaticResource BuildingRoutePathCellTemplate}"/>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Header="Минут" Width="220">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <ContentControl Content="{Binding}"
+                                                                        ContentTemplate="{StaticResource BuildingRouteMinutesEditorTemplate}"/>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Border>
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0"
+                                            Visibility="{Binding CanEditBuildingRoutes, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                    <Button Content="Сохранить переходы" Command="{Binding SaveBuildingRoutesCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left"/>
+                                    <Button Content="Всем 40 мин" Command="{Binding ApplyDefaultBuildingRoutesCommand}"
+                                            Style="{StaticResource SmallButtonStyle}" Margin="8,0,0,0"
+                                            ToolTip="Подставить 40 минут во все пары — затем сохраните"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="Список зданий" FontWeight="SemiBold" Margin="0,12,0,6"/>
+                        <Border Style="{StaticResource DirectoriesTableCardStyle}" Margin="0">
+                        <DataGrid ItemsSource="{Binding BuildingList}" AutoGenerateColumns="False" IsReadOnly="True"
+                                  Style="{StaticResource CrudDataGridStyle}"
+                                  MinHeight="140"
+                                  Margin="0"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  SelectedItem="{Binding SelectedBuilding}"
+                                  helpers:DataGridCrudBehaviors.EditRowCommand="{Binding EditBuildingRowCommand}"
+                                  helpers:DataGridCrudBehaviors.DeleteRowCommand="{Binding DeleteBuildingRowCommand}">
+                            <DataGrid.InputBindings>
+                                <KeyBinding Key="Delete" Command="{Binding DeleteBuildingCommand}"/>
+                            </DataGrid.InputBindings>
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Width="40"
+                                                        HeaderTemplate="{StaticResource DataGridCheckboxHeaderTemplate}"
+                                                        CellTemplate="{StaticResource DataGridCheckboxCellTemplate}"/>
+                                <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadSubjectTextStyle}"/>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="Цвет" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Border Style="{StaticResource BuildingListColorChipStyle}"
+                                                        Background="{Binding ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                <TextBlock Text="{Binding ColorHex, Converter={x:Static conv:BuildingColorLabelConverter.Instance}}"
+                                                           FontSize="12" Foreground="{StaticResource MutedTextBrush}"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="" Width="68" CellTemplate="{StaticResource DataGridRowActionsTemplate}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        </Border>
+                    </StackPanel>
+                </controls:ScrollableTabContent>
+            </TabItem>
+            <TabItem Header="Предметы">
+                <Grid Margin="12,8,12,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MinWidth="240"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="280" MinWidth="200"/>
+                    </Grid.ColumnDefinitions>
+                    <DockPanel Grid.Column="0">
+                        <Border DockPanel.Dock="Top" Style="{StaticResource CrudFormPanelStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Ваш справочник" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <Border Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,10">
+                                    <TextBlock Text="{Binding SubjectDirectoryHint}"
+                                               Style="{StaticResource SidePanelHelpTextStyle}" Margin="0"/>
+                                </Border>
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" MinWidth="120"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                        <TextBlock Text="Название предмета" Style="{StaticResource FormFieldLabelStyle}"/>
+                                        <TextBox Text="{Binding NewSubjectName, UpdateSourceTrigger=PropertyChanged}"
+                                                 ToolTip="Как предмет называется в расписании и учебном плане (например, «Математика»)"
+                                                 helpers:DuplicateHighlight.IsDuplicate="{Binding IsNewSubjectDuplicate}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Width="72" Margin="0,0,12,0">
+                                        <TextBlock Style="{StaticResource FormFieldLabelStyle}">
+                                            <TextBlock.ToolTip>
+                                                <TextBlock Text="{Binding SubjectDifficultyFieldHint}" TextWrapping="Wrap" MaxWidth="320"/>
+                                            </TextBlock.ToolTip>
+                                            <Run Text="Балл Сивкова"/>
+                                        </TextBlock>
+                                        <TextBox Text="{Binding NewSubjectDifficulty}" Width="72"
+                                                 ToolTip="{Binding SubjectDifficultyFieldHint}"/>
+                                        <TextBlock Text="{Binding NewSubjectDifficultyHint}" FontSize="10" Foreground="#B45309"
+                                                   TextWrapping="Wrap" Margin="0,2,0,0"
+                                                   Visibility="{Binding NewSubjectDifficultyHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                    </StackPanel>
+                                    <WrapPanel Grid.Column="2" VerticalAlignment="Bottom">
+                                        <Button Content="{Binding SaveSubjectLabel}" Command="{Binding SaveSubjectCommand}" Margin="0,0,8,4"/>
+                                        <Button Content="Удалить" Command="{Binding DeleteSubjectCommand}" Margin="0,0,8,4"
+                                                Style="{StaticResource SecondaryButtonStyle}"/>
+                                        <Button Content="Отмена" Command="{Binding CancelEditCommand}" Margin="0,0,0,4"
+                                                Style="{StaticResource SecondaryButtonStyle}"/>
+                                    </WrapPanel>
+                                </Grid>
+                                <TextBlock Text="{Binding SubjectDifficultyFieldHint}" FontSize="10"
+                                           Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                <TextBlock Text="{Binding NewSubjectDuplicateHint}" FontSize="10" Foreground="#DC2626" Margin="0,0,0,4"
+                                           Visibility="{Binding NewSubjectDuplicateHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6"
+                                            Visibility="{Binding NewSubjectSuggestionHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}">
+                                    <TextBlock Text="{Binding NewSubjectSuggestionHint}" FontSize="10" Foreground="#B45309"/>
+                                    <Button Content="Применить" Style="{StaticResource SmallButtonStyle}" Margin="8,0,0,0"
+                                            Command="{Binding ApplyNewSubjectSuggestionCommand}"/>
+                                </StackPanel>
+                                <TextBlock Text="Поиск в справочнике" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <Grid Margin="0,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Margin="0,0,8,0"
+                                             Text="{Binding SubjectFilterText, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Фильтр по названию — таблица ниже покажет только подходящие строки"/>
+                                    <Button Grid.Column="1" Content="Обновить баллы"
+                                            Command="{Binding RefreshSubjectDifficultiesCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            ToolTip="Пересчитать баллы Сивкова по вариантам расписаний Минпросвещения. Отмеченные галочкой — только они; иначе все предметы."/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource DirectoriesTableCardStyle}" Margin="0,8,0,0">
+                        <DataGrid ItemsSource="{Binding FilteredSubjectList}" AutoGenerateColumns="False" IsReadOnly="True"
+                                  Style="{StaticResource CrudDataGridStyle}"
+                                  Margin="0"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  SelectedItem="{Binding SelectedSubject}"
+                                  helpers:DataGridCrudBehaviors.EditRowCommand="{Binding EditSubjectRowCommand}"
+                                  helpers:DataGridCrudBehaviors.DeleteRowCommand="{Binding DeleteSubjectRowCommand}"
+                                  ToolTip="Дважды щёлкните строку для редактирования. ✓ — отметить для удаления нескольких предметов сразу.">
+                            <DataGrid.InputBindings>
+                                <KeyBinding Key="Delete" Command="{Binding DeleteSubjectCommand}"/>
+                            </DataGrid.InputBindings>
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Width="40"
+                                                        HeaderTemplate="{StaticResource DataGridCheckboxHeaderTemplate}"
+                                                        CellTemplate="{StaticResource DataGridCheckboxCellTemplate}"/>
+                                <DataGridTextColumn Binding="{Binding Name}" Width="*">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="Предмет"
+                                                   ToolTip="Название предмета — должно совпадать с учебным планом и ячейками в конструкторе"/>
+                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadSubjectTextStyle}"/>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding DifficultyCatalogRange}" Width="88">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="Сивков"
+                                                   ToolTip="Балл трудности по параллелям (шаблон Минпросвещения): 8–13 для математики и т.д. В расписании берётся значение для параллели класса"/>
+                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadNumericTextStyle}">
+                                            <Setter Property="ToolTip" Value="{Binding DifficultyScore, StringFormat=Ориентир в справочнике: {0}}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Width="68" CellTemplate="{StaticResource DataGridRowActionsTemplate}">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="⋯" HorizontalAlignment="Center"
+                                                   ToolTip="Изменить или удалить одну строку"/>
+                                    </DataGridTemplateColumn.Header>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        </Border>
+                    </DockPanel>
+                    <GridSplitter Grid.Column="1" Style="{StaticResource VerticalGridSplitterStyle}"/>
+                    <Border Grid.Column="2" Style="{StaticResource DirectorySidePanelStyle}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                                <TextBlock Text="Типовой перечень (ФГОС РФ)" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <Border Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,8">
+                                    <TextBlock Text="{Binding SubjectCatalogHint}"
+                                               Style="{StaticResource SidePanelHelpTextStyle}" Margin="0"/>
+                                </Border>
+                                <Border Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,10">
+                                    <TextBlock Text="{Binding SubjectCatalogBadgesHint}"
+                                               Style="{StaticResource SidePanelHelpTextStyle}" Margin="0"/>
+                                </Border>
+                                <TextBlock Text="Параллель" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <ComboBox Width="120" Margin="0,0,0,8"
+                                          ItemsSource="{Binding CatalogGradeLabels}"
+                                          SelectedIndex="{Binding CatalogGradeIndex}"
+                                          ToolTip="Показать предметы, предусмотренные для выбранного класса"/>
+                                <TextBlock Text="Поиск в перечне" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <TextBox Margin="0,0,0,8"
+                                         Text="{Binding CatalogSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Отфильтровать список по части названия"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <Button Content="Добавить выбранный" Command="{Binding ImportCatalogEntryCommand}" Margin="0,0,8,0"
+                                            ToolTip="Скопировать выделенную строку в ваш справочник слева"/>
+                                    <Button Content="Все для класса" Command="{Binding ImportCatalogForGradeCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            ToolTip="Добавить все предметы выбранной параллели (уже существующие по названию пропускаются)"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Style="{StaticResource DirectoriesTableCardStyle}" Margin="0">
+                            <ListBox ItemsSource="{Binding CatalogEntries}"
+                                     Style="{StaticResource DirectoryCatalogListBoxStyle}"
+                                     SelectedItem="{Binding SelectedCatalogEntry}"
+                                     ToolTip="Выберите строку и нажмите «Добавить выбранный»"/>
+                            </Border>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Классы">
+                <DockPanel Margin="12,8,12,0">
+                    <Border DockPanel.Dock="Top" Style="{StaticResource CrudFormPanelStyle}">
+                        <StackPanel>
+                        <WrapPanel Style="{StaticResource CrudFormWrapStyle}">
+                            <StackPanel Width="52" Margin="0,0,8,4">
+                                <TextBlock Text="Параллель" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <TextBox Text="{Binding NewClassGrade, UpdateSourceTrigger=PropertyChanged}" ToolTip="1–11"
+                                         helpers:DuplicateHighlight.IsDuplicate="{Binding IsNewClassDuplicate}"/>
+                            </StackPanel>
+                            <StackPanel Width="52" Margin="0,0,8,4">
+                                <TextBlock Text="Буква" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <TextBox Text="{Binding NewClassLetter, UpdateSourceTrigger=PropertyChanged}" ToolTip="А, Б, В…"
+                                         helpers:DuplicateHighlight.IsDuplicate="{Binding IsNewClassDuplicate}"/>
+                            </StackPanel>
+                            <StackPanel Width="80" Margin="0,0,8,4">
+                                <TextBlock Text="Смена" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <ComboBox IsEditable="True"
+                                          Text="{Binding NewClassShift, UpdateSourceTrigger=PropertyChanged}"
+                                          ToolTip="1 или 2. СП 2.4.3648-20 п. 3.4.15: 1, 5, 9–11 и коррекционные — только 1-я смена">
+                                    <ComboBoxItem Content="1"/>
+                                    <ComboBoxItem Content="2"/>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Width="64" Margin="0,0,8,4">
+                                <TextBlock Text="Учеников" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <TextBox Text="{Binding NewClassStudentCount, UpdateSourceTrigger=PropertyChanged}" ToolTip="Число обучающихся"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,8,4">
+                                <TextBlock Text="Тип" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <CheckBox Content="Коррекционный" IsChecked="{Binding NewClassIsCorrectional}" Margin="0,2,0,0"
+                                          ToolTip="Компенсирующий класс для обучающихся с ОВЗ — по СанПиН только 1-я смена"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,8,4" MinWidth="200">
+                                <TextBlock Text="Здание" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <ComboBox ItemsSource="{Binding BuildingList}" SelectedItem="{Binding NewClassBuilding}"
+                                          ToolTip="Корпус, где учится класс — столбцы в конструкторе группируются по зданиям">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Border Style="{StaticResource BuildingListColorChipStyle}"
+                                                        Background="{Binding ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,8,4" MinWidth="220">
+                                <TextBlock Text="Кабинет класса" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0" ItemsSource="{Binding RoomList}" SelectedItem="{Binding NewClassDefaultRoom}"
+                                              ToolTip="Обычно свой кабинет — подставится в конструкторе; здание для сетки задаётся отдельно">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Style="{StaticResource BuildingListColorChipStyle}"
+                                                            Background="{Binding BuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                    <TextBlock VerticalAlignment="Center">
+                                                        <Run Text="{Binding Number}"/>
+                                                        <Run Text=" · "/>
+                                                        <Run Text="{Binding BuildingName}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button Grid.Column="1" Content="Снять"
+                                            Command="{Binding ClearNewClassDefaultRoomCommand}"
+                                            Style="{StaticResource SmallButtonStyle}"
+                                            Margin="6,0,0,0" VerticalAlignment="Center"
+                                            Visibility="{Binding NewClassDefaultRoom, Converter={x:Static conv:NullToCollapsedConverter.Instance}}"
+                                            ToolTip="Не закреплять кабинет за классом"/>
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,8,4" MinWidth="220">
+                                <TextBlock Text="Физкультура" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0" ItemsSource="{Binding RoomList}" SelectedItem="{Binding NewClassDefaultPeRoom}"
+                                              ToolTip="Зал или кабинет для физ-ры — если класс ходит в другое здание или в свой зал">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Style="{StaticResource BuildingListColorChipStyle}"
+                                                            Background="{Binding BuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                    <TextBlock VerticalAlignment="Center">
+                                                        <Run Text="{Binding Number}"/>
+                                                        <Run Text=" · "/>
+                                                        <Run Text="{Binding BuildingName}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button Grid.Column="1" Content="Снять"
+                                            Command="{Binding ClearNewClassDefaultPeRoomCommand}"
+                                            Style="{StaticResource SmallButtonStyle}"
+                                            Margin="6,0,0,0" VerticalAlignment="Center"
+                                            Visibility="{Binding NewClassDefaultPeRoom, Converter={x:Static conv:NullToCollapsedConverter.Instance}}"
+                                            ToolTip="Не назначать спортзал по умолчанию"/>
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,8,4" MinWidth="220">
+                                <TextBlock Text="Звонки" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <ComboBox IsEditable="True" ItemsSource="{Binding BellTemplateNames}"
+                                          Text="{Binding NewClassBellTemplate, UpdateSourceTrigger=PropertyChanged}"
+                                          ToolTip="Пусто — по умолчанию (1 класс / 1 или 2 смена). Иначе — свой шаблон, класс будет в отдельной группе сетки"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,18,0,4">
+                                <Button Content="{Binding SaveClassLabel}" Command="{Binding SaveClassCommand}" Margin="0,0,8,0"/>
+                                <Button Content="Удалить" Command="{Binding DeleteClassCommand}" Margin="0,0,8,0"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                                <Button Content="Отмена" Command="{Binding CancelEditCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                            </StackPanel>
+                        </WrapPanel>
+                        <TextBlock Text="{Binding NewClassDuplicateHint}" FontSize="10" Foreground="#DC2626" Margin="0,4,0,0"
+                                   Visibility="{Binding NewClassDuplicateHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                        <TextBlock Text="{Binding NewClassShiftSanPinHint}" FontSize="10" Foreground="#B45309" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Visibility="{Binding NewClassShiftSanPinHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource DirectoriesTableCardStyle}" Margin="0,8,0,0">
+                    <DataGrid ItemsSource="{Binding ClassList}" AutoGenerateColumns="False" IsReadOnly="True"
+                              Style="{StaticResource CrudDataGridStyle}"
+                              Margin="0"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              SelectedItem="{Binding SelectedClass}"
+                              helpers:DataGridCrudBehaviors.EditRowCommand="{Binding EditClassRowCommand}"
+                              helpers:DataGridCrudBehaviors.DeleteRowCommand="{Binding DeleteClassRowCommand}">
+                        <DataGrid.InputBindings>
+                            <KeyBinding Key="Delete" Command="{Binding DeleteClassCommand}"/>
+                        </DataGrid.InputBindings>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="40"
+                                                    HeaderTemplate="{StaticResource DataGridCheckboxHeaderTemplate}"
+                                                    CellTemplate="{StaticResource DataGridCheckboxCellTemplate}"/>
+                            <DataGridTextColumn Header="Класс" Binding="{Binding DisplayName}" Width="80">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadSubjectTextStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="Здание" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Style="{StaticResource BuildingListColorChipStyle}"
+                                                    Background="{Binding BuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                            <TextBlock Text="{Binding BuildingName}" VerticalAlignment="Center"
+                                                       Style="{StaticResource CurriculumLoadSubjectTextStyle}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Кабинет" Binding="{Binding DefaultRoomDisplay}" Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadMutedTextStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Физ-ра" Binding="{Binding DefaultPeRoomDisplay}" Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadMutedTextStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Тип" Binding="{Binding TypeDisplay}" Width="110">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadMutedTextStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Смена" Binding="{Binding ShiftDisplay}" Width="70">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadNumericTextStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Звонки" Binding="{Binding BellTemplateDisplay}" Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadMutedTextStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Учеников" Binding="{Binding StudentCount}" Width="80">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadNumericTextStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="" Width="68" CellTemplate="{StaticResource DataGridRowActionsTemplate}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    </Border>
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="Сотрудники">
+                <Grid Margin="12,8,12,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MinWidth="200"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="1.1*" MinWidth="220" MaxWidth="480"/>
+                    </Grid.ColumnDefinitions>
+                    <DockPanel Grid.Column="0">
+                        <Border DockPanel.Dock="Top" Style="{StaticResource CrudFormPanelStyle}">
+                            <WrapPanel Style="{StaticResource CrudFormWrapStyle}">
+                                <TextBox MinWidth="120" Width="180" Text="{Binding NewTeacherName, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="ФИО" Margin="0,0,8,4"
+                                         helpers:DuplicateHighlight.IsDuplicate="{Binding IsNewTeacherDuplicate}"/>
+                                <ComboBox MinWidth="100" Width="130" SelectedValue="{Binding NewTeacherType}" Margin="0,0,8,4"
+                                          SelectedValuePath="Tag">
+                                    <ComboBoxItem Content="Предметник" Tag="Subject"/>
+                                    <ComboBoxItem Content="Начальные" Tag="Primary"/>
+                                    <ComboBoxItem Content="Вспомогательный" Tag="Auxiliary"/>
+                                </ComboBox>
+                                <Button Content="Добавить" Command="{Binding AddTeacherCommand}" Margin="0,0,8,4"/>
+                            </WrapPanel>
+                        </Border>
+                        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+                            <TextBlock Text="{Binding NewTeacherDuplicateHint}" FontSize="10" Foreground="#DC2626"
+                                       Visibility="{Binding NewTeacherDuplicateHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                            <StackPanel Orientation="Horizontal"
+                                        Visibility="{Binding NewTeacherSuggestionHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}">
+                                <TextBlock Text="{Binding NewTeacherSuggestionHint}" FontSize="10" Foreground="#B45309" TextWrapping="Wrap"/>
+                                <Button Content="Применить" Style="{StaticResource SmallButtonStyle}" Margin="8,0,0,0"
+                                        Command="{Binding ApplyNewTeacherSuggestionCommand}"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                            <TextBox Text="{Binding TeacherFilterText, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Поиск по ФИО — список отфильтруется при вводе"
+                                     Padding="4,4,30,4"/>
+                            <Button Content="×" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Style="{StaticResource RowIconButtonStyle}"
+                                    Command="{Binding ClearTeacherFilterCommand}"
+                                    ToolTip="Очистить поиск"
+                                    Visibility="{Binding TeacherFilterText, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                        </Grid>
+                        <Border Style="{StaticResource DirectoriesTableCardStyle}" Margin="0,4,0,0" Padding="4,6,2,6">
+                        <ListBox ItemsSource="{Binding FilteredTeacherList}"
+                                 Style="{StaticResource TeacherPickerListBoxStyle}"
+                                 ItemTemplate="{StaticResource TeacherPickerListItemTemplate}"
+                                 SelectedItem="{Binding SelectedTeacher}"
+                                 helpers:DataGridCrudBehaviors.EditRowCommand="{Binding EditTeacherRowCommand}"
+                                 helpers:DataGridCrudBehaviors.DeleteRowCommand="{Binding DeleteTeacherRowCommand}">
+                            <ListBox.InputBindings>
+                                <KeyBinding Key="Delete" Command="{Binding DeleteTeacherCommand}"/>
+                            </ListBox.InputBindings>
+                        </ListBox>
+                        </Border>
+                    </DockPanel>
+                    <GridSplitter Grid.Column="1" Style="{StaticResource VerticalGridSplitterStyle}"/>
+                    <TextBlock Grid.Column="2" Text="Выберите сотрудника в списке слева"
+                               VerticalAlignment="Center" HorizontalAlignment="Center"
+                               Foreground="{StaticResource MutedTextBrush}" FontSize="13"
+                               TextWrapping="Wrap" TextAlignment="Center" Margin="24"
+                               Visibility="{Binding SelectedTeacher, Converter={x:Static conv:InverseNullToCollapsedConverter.Instance}}"/>
+                    <Grid Grid.Column="2"
+                          Visibility="{Binding SelectedTeacher, Converter={x:Static conv:NullToCollapsedConverter.Instance}}">
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Auto"
+                                      Padding="0,0,0,52"
+                                      helpers:CompactPanel.CompactAt="300">
+                        <Border Style="{StaticResource TeacherCardShellStyle}"
+                                Width="{Binding ViewportWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                            <StackPanel>
+                                <Border Style="{StaticResource TeacherCardHeaderStyle}">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*" MinWidth="0"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Style="{StaticResource TeacherCardAvatarStyle}" Grid.Column="0" Margin="0,0,12,0">
+                                                <TextBlock Text="👤" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" MinWidth="0">
+                                                <TextBox Text="{Binding EditTeacherName, UpdateSourceTrigger=PropertyChanged}"
+                                                         FontWeight="SemiBold" FontSize="15" Padding="4,2"
+                                                         BorderThickness="0,0,0,1"
+                                                         Background="Transparent"
+                                                         ToolTip="ФИО сотрудника"
+                                                         helpers:DuplicateHighlight.IsDuplicate="{Binding IsEditTeacherDuplicate}"/>
+                                                <TextBlock Text="{Binding SelectedTeacher.TypeDisplay}" Style="{StaticResource TeacherCardSubtitleStyle}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Border Style="{StaticResource TeacherCardHeaderActionsStyle}" HorizontalAlignment="Right">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Style="{StaticResource SidePanelIconSaveButtonStyle}"
+                                                        Command="{Binding SaveTeacherCommand}"
+                                                        ToolTip="Сохранить карточку"/>
+                                                <Button Style="{StaticResource SidePanelIconDangerButtonStyle}"
+                                                        Tag="🗑"
+                                                        Command="{Binding DeleteTeacherCommand}"
+                                                        ToolTip="Удалить сотрудника"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                                <StackPanel Style="{StaticResource TeacherCardBodyStyle}">
+                                    <Border Style="{StaticResource TeacherCardSectionStyle}">
+                                        <StackPanel>
+                                            <ContentControl Content="Основные данные"
+                                                            ContentTemplate="{StaticResource TeacherCardSectionHeaderTemplate}"/>
+                                            <TextBlock Text="ФИО" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBox Style="{StaticResource SidePanelFieldStyle}"
+                                                     Text="{Binding EditTeacherName, UpdateSourceTrigger=PropertyChanged}"
+                                                     helpers:DuplicateHighlight.IsDuplicate="{Binding IsEditTeacherDuplicate}"/>
+                                            <TextBlock Text="{Binding EditTeacherDuplicateHint}" FontSize="10" Foreground="#DC2626"
+                                                       Visibility="{Binding EditTeacherDuplicateHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,8"
+                                                        Visibility="{Binding EditTeacherSuggestionHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}">
+                                                <TextBlock Text="{Binding EditTeacherSuggestionHint}" FontSize="10"
+                                                           Foreground="#B45309" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                                <Button Content="Применить" Style="{StaticResource SmallButtonStyle}" Margin="8,0,0,0"
+                                                        Command="{Binding ApplyEditTeacherSuggestionCommand}"
+                                                        ToolTip="Подставить предложенное ФИО"/>
+                                            </StackPanel>
+                                            <TextBlock Text="Тип" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <ComboBox Style="{StaticResource SidePanelComboStyle}"
+                                                      SelectedValue="{Binding EditTeacherType}" SelectedValuePath="Tag">
+                                                <ComboBoxItem Content="Предметник" Tag="Subject"/>
+                                                <ComboBoxItem Content="Начальные классы" Tag="Primary"/>
+                                                <ComboBoxItem Content="Вспомогательный" Tag="Auxiliary"/>
+                                            </ComboBox>
+                                            <TextBlock Text="Должность" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBox Style="{StaticResource SidePanelFieldStyle}"
+                                                     Text="{Binding EditJobTitle, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBlock Text="Основной предмет" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBlock Text="{Binding PrimarySubjectFormHint}"
+                                                       Style="{StaticResource SidePanelHelpTextStyle}" Margin="0,0,0,4"/>
+                                            <ComboBox Style="{StaticResource SidePanelComboStyle}"
+                                                      ItemsSource="{Binding SubjectList}"
+                                                      SelectedItem="{Binding EditPrimarySubjectItem}"
+                                                      DisplayMemberPath="Name"
+                                                      ToolTip="Выберите предмет из справочника"/>
+                                            <TextBlock Text="Дополнительные предметы" Style="{StaticResource FormFieldLabelStyle}" Margin="0,8,0,0"/>
+                                            <TextBlock Text="{Binding SecondarySubjectFormHint}"
+                                                       Style="{StaticResource SidePanelHelpTextStyle}" Margin="0,0,0,4"/>
+                                            <ItemsControl ItemsSource="{Binding SecondarySubjectOptions}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <CheckBox Content="{Binding DisplayName}" IsChecked="{Binding IsSelected}"
+                                                                  Style="{StaticResource TeacherClassChipCheckBoxStyle}"
+                                                                  Margin="0,0,8,8"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <TextBlock Text="Телефон" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBox Style="{StaticResource SidePanelFieldStyle}"
+                                                     Text="{Binding EditPhone, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBlock Text="Ссылка (мессенджер, почта…)" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBox Style="{StaticResource SidePanelFieldStyle}"
+                                                     Text="{Binding EditContactUrl, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBlock Text="Заметка к контакту" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBox Style="{StaticResource SidePanelFieldStyle}" Margin="0,2,0,0"
+                                                     Text="{Binding EditContactNote, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource TeacherCardSectionStyle}">
+                                        <StackPanel>
+                                            <ContentControl Content="Подсказки для расписания"
+                                                            ContentTemplate="{StaticResource TeacherCardSectionHeaderTemplate}"/>
+                                            <TextBlock Text="Не ограничивают выбор — только помогают подставить учителя в конструкторе."
+                                                       Style="{StaticResource SidePanelHelpTextStyle}" Margin="0,0,0,8"/>
+                                            <TextBlock Text="Классное руководство" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <Grid Margin="0,0,0,8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <ComboBox Grid.Column="0" Style="{StaticResource SidePanelComboStyle}"
+                                                          ItemsSource="{Binding ClassList}"
+                                                          SelectedItem="{Binding EditHomeroomClass}"
+                                                          DisplayMemberPath="DisplayName"
+                                                          ToolTip="Класс, где педагог — классный руководитель. Учитывается при подборе и заменах"/>
+                                                <Button Grid.Column="1" Content="Снять"
+                                                        Command="{Binding ClearEditHomeroomClassCommand}"
+                                                        Style="{StaticResource SmallButtonStyle}"
+                                                        Margin="6,0,0,0" VerticalAlignment="Center"
+                                                        Visibility="{Binding EditHomeroomClass, Converter={x:Static conv:NullToCollapsedConverter.Instance}}"
+                                                        ToolTip="Не классный руководитель"/>
+                                            </Grid>
+                                            <CheckBox Content="Работает с 1 классами"
+                                                      IsChecked="{Binding EditWorksWithFirstGrade}" Margin="0,0,0,8"/>
+                                            <TextBlock Text="Обычно ведёт уроки в классах:" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBlock Text="{Binding ClassPreferenceEmptyHint}" FontSize="10"
+                                                       Foreground="#B45309" TextWrapping="Wrap" Margin="0,2,0,8"
+                                                       Visibility="{Binding ClassPreferenceEmptyHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                            <ItemsControl ItemsSource="{Binding ClassPreferenceOptions}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <CheckBox Content="{Binding DisplayName}" IsChecked="{Binding IsSelected}"
+                                                                  Style="{StaticResource TeacherClassChipCheckBoxStyle}"
+                                                                  Margin="0,0,8,8"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource TeacherCardSectionStyle}">
+                                        <StackPanel>
+                                            <ContentControl Content="Нагрузка из справочника"
+                                                            ContentTemplate="{StaticResource TeacherCardSectionHeaderTemplate}"/>
+                                            <TextBlock Text="Отметьте строки учебного плана, которые ведёт педагог. Сначала — ваши предметы в отмеченных классах, затем те же предметы в других классах, потом прочая нагрузка классов и остальное. Зелёный — свободно; голубой — подгруппы, можно второго педагога; жёлтый — место занято."
+                                                       Style="{StaticResource SidePanelHelpTextStyle}" Margin="0,0,0,8"/>
+                                            <TextBlock Text="{Binding CurriculumAssignmentEmptyHint}" FontSize="10"
+                                                       Foreground="#B45309" TextWrapping="Wrap" Margin="0,2,0,8"
+                                                       Visibility="{Binding CurriculumAssignmentEmptyHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                            <TextBlock Text="{Binding TeacherCurriculumTotalDisplay}" FontWeight="SemiBold"
+                                                       FontSize="12" Foreground="#1E40AF" Margin="0,0,0,8"
+                                                       Visibility="{Binding TeacherCurriculumTotalDisplay, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                            <ItemsControl ItemsSource="{Binding CurriculumAssignmentSections}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Margin="0,0,0,10">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="11"
+                                                                       Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6"
+                                                                       Visibility="{Binding Title, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                                            <ItemsControl ItemsSource="{Binding Items}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <Border CornerRadius="4" Padding="4,2" Margin="0,0,0,4">
+                                                                            <Border.Style>
+                                                                                <Style TargetType="Border">
+                                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                                    <Setter Property="ToolTip" Value="{Binding AssignmentHint}"/>
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding IsUnassignedHighlight}" Value="True">
+                                                                                            <Setter Property="Background" Value="#F0FDF4"/>
+                                                                                        </DataTrigger>
+                                                                                        <DataTrigger Binding="{Binding IsSubgroupSharedHighlight}" Value="True">
+                                                                                            <Setter Property="Background" Value="#EFF6FF"/>
+                                                                                        </DataTrigger>
+                                                                                        <DataTrigger Binding="{Binding IsOthersHighlight}" Value="True">
+                                                                                            <Setter Property="Background" Value="#FFFBEB"/>
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </Border.Style>
+                                                                            <CheckBox IsChecked="{Binding IsSelected}"
+                                                                                      IsEnabled="{Binding IsAssignmentEnabled}">
+                                                                                <StackPanel>
+                                                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"/>
+                                                                                    <TextBlock Text="{Binding DetailsLine}" FontSize="10"
+                                                                                               Foreground="{StaticResource MutedTextBrush}"/>
+                                                                                </StackPanel>
+                                                                            </CheckBox>
+                                                                        </Border>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource TeacherCardSectionStyle}">
+                                        <StackPanel>
+                                            <ContentControl Content="Здание по дням"
+                                                            ContentTemplate="{StaticResource TeacherCardSectionHeaderTemplate}"/>
+                                            <Border Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,10">
+                                                <TextBlock Text="{Binding TeacherBuildingDayHint}"
+                                                           Style="{StaticResource SidePanelHelpTextStyle}" Margin="0"/>
+                                            </Border>
+                                            <WrapPanel Margin="0,0,0,4">
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,12,4">
+                                                    <TextBlock Text="День:" Style="{StaticResource SidePanelInlineLabelStyle}" Margin="0,0,6,0"/>
+                                                    <ComboBox Width="52" MinWidth="48" SelectedIndex="{Binding NewTeacherBuildingDayIndex}">
+                                                        <ComboBoxItem Content="Пн"/>
+                                                        <ComboBoxItem Content="Вт"/>
+                                                        <ComboBoxItem Content="Ср"/>
+                                                        <ComboBoxItem Content="Чт"/>
+                                                        <ComboBoxItem Content="Пт"/>
+                                                        <ComboBoxItem Content="Сб"/>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                    <TextBlock Text="Здание:" Style="{StaticResource SidePanelInlineLabelStyle}" Margin="0,0,6,0"/>
+                                                    <ComboBox Width="160" MinWidth="120"
+                                                              ItemsSource="{Binding BuildingList}"
+                                                              DisplayMemberPath="Name"
+                                                              SelectedItem="{Binding NewTeacherBuildingDayBuilding}"/>
+                                                </StackPanel>
+                                            </WrapPanel>
+                                            <Button Style="{StaticResource SidePanelIconPrimaryButtonStyle}"
+                                                    Tag="+" HorizontalAlignment="Left"
+                                                    Command="{Binding AddTeacherBuildingDayCommand}"
+                                                    ToolTip="Добавить или обновить день недели"/>
+                                            <TextBlock Text="{Binding TeacherBuildingDayListCaption}" FontSize="10"
+                                                       Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,4"/>
+                                            <ItemsControl ItemsSource="{Binding TeacherBuildingDays}" Margin="0,0,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Style="{StaticResource TeacherCardListItemStyle}">
+                                                            <DockPanel LastChildFill="True">
+                                                                <Button DockPanel.Dock="Right" Content="×"
+                                                                        Style="{StaticResource IconButtonStyle}"
+                                                                        Command="{Binding DataContext.RemoveTeacherBuildingDayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"/>
+                                                                <TextBlock Text="🏫" FontSize="13" DockPanel.Dock="Left"
+                                                                           VerticalAlignment="Top" Margin="0,0,8,0"/>
+                                                                <TextBlock Text="{Binding DisplayText}"
+                                                                           Style="{StaticResource TeacherCardRecordTextStyle}"/>
+                                                            </DockPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource TeacherCardSectionStyle}">
+                                        <StackPanel>
+                                            <ContentControl Content="Статус отсутствия"
+                                                            ContentTemplate="{StaticResource TeacherCardSectionHeaderTemplate}"/>
+                                            <Border Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,10">
+                                                <TextBlock Text="{Binding StatusFormHint}" Style="{StaticResource SidePanelHelpTextStyle}" Margin="0"/>
+                                            </Border>
+                                            <TextBlock Text="Тип" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <ComboBox Style="{StaticResource SidePanelComboStyle}" Margin="0,2,0,4"
+                                                      SelectedValue="{Binding NewStatusType}" SelectedValuePath="Tag">
+                                                <ComboBoxItem Content="Больничный" Tag="Sick"/>
+                                                <ComboBoxItem Content="Отгул" Tag="Leave"/>
+                                                <ComboBoxItem Content="Другое" Tag="Other"/>
+                                            </ComboBox>
+                                            <TextBlock Text="С даты" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <DatePicker Style="{StaticResource SidePanelDatePickerStyle}"
+                                                        SelectedDate="{Binding NewStatusStartDate}"/>
+                                            <CheckBox Content="Без даты окончания" IsChecked="{Binding NewStatusOpenEnded}"
+                                                      Margin="0,6,0,4"/>
+                                            <StackPanel Visibility="{Binding NewStatusOpenEnded, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}">
+                                                <TextBlock Text="По дату" Style="{StaticResource FormFieldLabelStyle}"/>
+                                                <DatePicker Style="{StaticResource SidePanelDatePickerStyle}" Margin="0,2,0,4"
+                                                            SelectedDate="{Binding NewStatusEndDate}"/>
+                                            </StackPanel>
+                                            <CheckBox Content="Официальное отсутствие" IsChecked="{Binding NewStatusIsOfficial}"
+                                                      Margin="0,0,0,4"/>
+                                            <TextBlock Text="Комментарий (необязательно)" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBlock Text="Номер больничного, причина отгула — для себя."
+                                                       FontSize="10" Foreground="{StaticResource MutedTextBrush}"
+                                                       TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                            <TextBox Style="{StaticResource SidePanelFieldStyle}" Margin="0,0,0,6"
+                                                     Text="{Binding NewStatusNote}"/>
+                                            <Button Style="{StaticResource SidePanelIconPrimaryButtonStyle}"
+                                                    Tag="+" HorizontalAlignment="Left"
+                                                    Command="{Binding AddStatusPeriodCommand}"
+                                                    ToolTip="Добавить период отсутствия"/>
+                                            <ItemsControl ItemsSource="{Binding StatusPeriods}" Margin="0,8,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Style="{StaticResource TeacherCardListItemStyle}">
+                                                            <DockPanel LastChildFill="True">
+                                                                <Button DockPanel.Dock="Right" Content="×"
+                                                                        Style="{StaticResource IconButtonStyle}"
+                                                                        Command="{Binding DataContext.RemoveStatusPeriodCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"/>
+                                                                <TextBlock Text="🩺" FontSize="13" DockPanel.Dock="Left"
+                                                                           VerticalAlignment="Top" Margin="0,0,8,0"/>
+                                                                <TextBlock Text="{Binding DisplayText}"
+                                                                           Style="{StaticResource TeacherCardRecordTextStyle}"/>
+                                                            </DockPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource TeacherCardSectionStyle}" Margin="0">
+                                        <StackPanel>
+                                            <ContentControl Content="Нерабочее время"
+                                                            ContentTemplate="{StaticResource TeacherCardSectionHeaderTemplate}"/>
+                                            <Border Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,10">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding UnavailabilitySectionHint}"
+                                                               Style="{StaticResource SidePanelHelpTextStyle}" Margin="0,0,0,6"/>
+                                                    <TextBlock Text="{Binding UnavailabilityFormHint}"
+                                                               Style="{StaticResource SidePanelHelpTextStyle}" Margin="0"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <TextBlock Text="Тип повторения" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <ComboBox Style="{StaticResource SidePanelComboStyle}" Margin="0,2,0,4"
+                                                      SelectedValue="{Binding NewUnavailRecurrence}" SelectedValuePath="Tag">
+                                                <ComboBoxItem Content="Еженедельно" Tag="Weekly"/>
+                                                <ComboBoxItem Content="Разово" Tag="Once"/>
+                                                <ComboBoxItem Content="Период" Tag="DateRange"/>
+                                            </ComboBox>
+                                            <WrapPanel Margin="0,0,0,4">
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                    <TextBlock Text="День недели:" Style="{StaticResource SidePanelInlineLabelStyle}" Margin="0,0,6,0"/>
+                                                    <ComboBox Width="52" MinWidth="48" SelectedIndex="{Binding NewUnavailDayIndex}"
+                                                              ToolTip="Для «Еженедельно»">
+                                                        <ComboBoxItem Content="Пн"/>
+                                                        <ComboBoxItem Content="Вт"/>
+                                                        <ComboBoxItem Content="Ср"/>
+                                                        <ComboBoxItem Content="Чт"/>
+                                                        <ComboBoxItem Content="Пт"/>
+                                                        <ComboBoxItem Content="Сб"/>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                            </WrapPanel>
+                                            <TextBlock Text="С даты" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <DatePicker Style="{StaticResource SidePanelDatePickerStyle}"
+                                                        SelectedDate="{Binding NewUnavailStartDate}"/>
+                                            <TextBlock Text="По дату" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <DatePicker Style="{StaticResource SidePanelDatePickerStyle}" Margin="0,2,0,4"
+                                                        SelectedDate="{Binding NewUnavailEndDate}"
+                                                        ToolTip="Для «Период» и «Еженедельно»"/>
+                                            <CheckBox Content="Весь день" IsChecked="{Binding NewUnavailAllDay}" Margin="0,0,0,4"/>
+                                            <TextBlock Text="{Binding UnavailabilityLessonsHint}"
+                                                       Style="{StaticResource SidePanelHelpTextStyle}"/>
+                                            <WrapPanel Margin="0,0,0,4">
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                    <TextBlock Text="Уроки с" Style="{StaticResource SidePanelInlineLabelStyle}" Margin="0,0,6,0"/>
+                                                    <TextBox Width="36" MinWidth="32" Text="{Binding NewUnavailLessonFrom}"/>
+                                                    <TextBlock Text="по" Style="{StaticResource SidePanelInlineLabelStyle}" Margin="6,0"/>
+                                                    <TextBox Width="36" MinWidth="32" Text="{Binding NewUnavailLessonTo}"/>
+                                                </StackPanel>
+                                            </WrapPanel>
+                                            <TextBlock Text="Комментарий (необязательно)" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBlock Text="Методический день, пары в вузе — чтобы понять запись в списке."
+                                                       FontSize="10" Foreground="{StaticResource MutedTextBrush}"
+                                                       TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                            <TextBox Style="{StaticResource SidePanelFieldStyle}" Margin="0,0,0,6"
+                                                     Text="{Binding NewUnavailNote}"/>
+                                            <Button Style="{StaticResource SidePanelIconPrimaryButtonStyle}"
+                                                    Tag="+" HorizontalAlignment="Left"
+                                                    Command="{Binding AddUnavailabilityCommand}"
+                                                    ToolTip="Добавить ещё одну запись нерабочего времени"/>
+                                            <TextBlock Text="{Binding UnavailabilityListCaption}" FontSize="10"
+                                                       Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,4"/>
+                                            <ItemsControl ItemsSource="{Binding Unavailabilities}" Margin="0,8,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Style="{StaticResource TeacherCardListItemStyle}">
+                                                            <DockPanel LastChildFill="True">
+                                                                <Button DockPanel.Dock="Right" Content="×"
+                                                                        Style="{StaticResource IconButtonStyle}"
+                                                                        Command="{Binding DataContext.RemoveUnavailabilityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"/>
+                                                                <TextBlock Text="⏱" FontSize="13" DockPanel.Dock="Left"
+                                                                           VerticalAlignment="Top" Margin="0,0,8,0"/>
+                                                                <TextBlock Text="{Binding DisplayText}"
+                                                                           Style="{StaticResource TeacherCardRecordTextStyle}"/>
+                                                            </DockPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </ScrollViewer>
+                        <Border VerticalAlignment="Bottom"
+                                Background="#F8FAFC"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="10,8">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="8" ShadowDepth="-1" Direction="90"
+                                                  Opacity="0.12" Color="#000000"/>
+                            </Border.Effect>
+                            <Button Content="Сохранить"
+                                    Command="{Binding SaveTeacherCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    HorizontalAlignment="Stretch"
+                                    ToolTip="Сохранить карточку сотрудника"/>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Кабинеты">
+                <DockPanel Margin="12,8,12,0">
+                    <Border DockPanel.Dock="Top" Style="{StaticResource CrudFormPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding RoomFormHint}" Style="{StaticResource SidePanelHelpTextStyle}" Margin="0,0,0,8"/>
+                            <WrapPanel Style="{StaticResource CrudFormWrapStyle}">
+                                <StackPanel Width="72" Margin="0,0,8,4">
+                                    <TextBlock Text="Кабинет" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <TextBox Text="{Binding NewRoomNumber, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Номер или название: 206, с/з, Спортзал"
+                                             helpers:DuplicateHighlight.IsDuplicate="{Binding IsNewRoomDuplicate}"/>
+                                </StackPanel>
+                                <StackPanel MinWidth="140" Margin="0,0,8,4">
+                                    <TextBlock Text="Здание" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <ComboBox ItemsSource="{Binding BuildingList}"
+                                              SelectedItem="{Binding SelectedRoomBuilding}"
+                                              ToolTip="В каком корпусе находится кабинет"
+                                              helpers:DuplicateHighlight.IsDuplicate="{Binding IsNewRoomDuplicate}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Border Style="{StaticResource BuildingListColorChipStyle}"
+                                                            Background="{Binding ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Width="56" Margin="0,0,8,4">
+                                    <TextBlock Text="Мест" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <TextBox Text="{Binding NewRoomCapacity}" ToolTip="Вместимость, учеников"/>
+                                </StackPanel>
+                                <StackPanel MinWidth="130" Margin="0,0,8,4">
+                                    <TextBlock Text="Тип" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <ComboBox ItemsSource="{Binding RoomKindOptions}"
+                                              IsEditable="True"
+                                              Text="{Binding NewRoomKind, UpdateSourceTrigger=PropertyChanged}"
+                                              ToolTip="Обычный, спортзал, лаборатория… Можно ввести свой вариант"/>
+                                </StackPanel>
+                                <StackPanel Margin="0,0,8,4">
+                                    <TextBlock Text="Спортзал" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <CheckBox Content="Неск. групп" IsChecked="{Binding NewRoomAllowsParallelGroups}" Margin="0,2,0,0"
+                                              IsEnabled="{Binding IsNewRoomSportsHall}"
+                                              ToolTip="Несколько классов одновременно — оранжевое предупреждение, не блок"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,4">
+                                    <Button Content="{Binding SaveRoomLabel}" Command="{Binding SaveRoomCommand}" Margin="0,0,8,0"/>
+                                    <Button Content="Удалить" Command="{Binding DeleteRoomCommand}" Margin="0,0,8,0"
+                                            Style="{StaticResource SecondaryButtonStyle}"/>
+                                    <Button Content="Отмена" Command="{Binding CancelEditCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"/>
+                                </StackPanel>
+                            </WrapPanel>
+                            <TextBlock Text="{Binding NewRoomDuplicateHint}" FontSize="10" Foreground="#DC2626" Margin="0,4,0,0"
+                                       Visibility="{Binding NewRoomDuplicateHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource DirectoriesTableCardStyle}" Margin="0,8,0,0">
+                    <DataGrid ItemsSource="{Binding RoomList}" AutoGenerateColumns="False" IsReadOnly="True"
+                              Style="{StaticResource CrudDataGridStyle}"
+                              Margin="0"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              SelectedItem="{Binding SelectedRoom}"
+                              helpers:DataGridCrudBehaviors.EditRowCommand="{Binding EditRoomRowCommand}"
+                              helpers:DataGridCrudBehaviors.DeleteRowCommand="{Binding DeleteRoomRowCommand}">
+                        <DataGrid.InputBindings>
+                            <KeyBinding Key="Delete" Command="{Binding DeleteRoomCommand}"/>
+                        </DataGrid.InputBindings>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="40"
+                                                    HeaderTemplate="{StaticResource DataGridCheckboxHeaderTemplate}"
+                                                    CellTemplate="{StaticResource DataGridCheckboxCellTemplate}"/>
+                            <DataGridTextColumn Header="Кабинет" Binding="{Binding Number}" Width="80">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadSubjectTextStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="Здание" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Style="{StaticResource BuildingListColorChipStyle}"
+                                                    Background="{Binding BuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                            <TextBlock Text="{Binding BuildingName}" VerticalAlignment="Center"
+                                                       Style="{StaticResource CurriculumLoadSubjectTextStyle}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Мест" Binding="{Binding Capacity}" Width="60">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadNumericTextStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Тип" Binding="{Binding RoomKindDisplay}" Width="110">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadMutedTextStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Неск. групп" Binding="{Binding ParallelGroupsDisplay}" Width="72">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadNumericTextStyle}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="" Width="68" CellTemplate="{StaticResource DataGridRowActionsTemplate}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    </Border>
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="Нагрузка">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              CanContentScroll="False">
+                    <StackPanel Margin="12,8,12,12">
+                    <Border Style="{StaticResource CrudFormPanelStyle}" Margin="0,0,0,8">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="Новая строка" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <Button Content="Сбросить выбор" Command="{Binding BeginNewCurriculumCommand}"
+                                        Style="{StaticResource SmallButtonStyle}" Margin="8,0,0,0"
+                                        ToolTip="Снять выделение строки и подготовить форму для добавления"/>
+                            </StackPanel>
+                            <WrapPanel Style="{StaticResource CrudFormWrapStyle}">
+                                <TextBlock Text="Класс:" VerticalAlignment="Center" Margin="0,0,4,4"/>
+                                <ComboBox ItemsSource="{Binding ClassList}" DisplayMemberPath="DisplayName"
+                                          SelectedItem="{Binding NewCurriculumClass}" Width="90" Margin="0,0,12,4"
+                                          helpers:DuplicateHighlight.IsDuplicate="{Binding IsNewCurriculumDuplicate}"/>
+                                <TextBlock Text="Предмет:" VerticalAlignment="Center" Margin="0,0,4,4"/>
+                                <ComboBox ItemsSource="{Binding FilteredSubjectList}" DisplayMemberPath="Name"
+                                          SelectedItem="{Binding NewCurriculumSubject}" Width="180" Margin="0,0,12,4"
+                                          helpers:DuplicateHighlight.IsDuplicate="{Binding IsNewCurriculumDuplicate}"/>
+                                <TextBlock Text="Ч/нед:" VerticalAlignment="Center" Margin="0,0,4,4"/>
+                                <TextBox Text="{Binding NewCurriculumHours}" Width="50" Margin="0,0,12,4"/>
+                                <TextBlock Text="Сивков:" VerticalAlignment="Center" Margin="0,0,4,4"/>
+                                <TextBox Text="{Binding NewCurriculumDifficulty}" Width="60" Margin="0,0,12,4"/>
+                                <TextBlock Text="Неделя:" VerticalAlignment="Center" Margin="0,0,4,4"/>
+                                <ComboBox Width="140" Margin="0,0,12,4"
+                                          SelectedValue="{Binding NewCurriculumWeekParity}" SelectedValuePath="Tag"
+                                          helpers:DuplicateHighlight.IsDuplicate="{Binding IsNewCurriculumDuplicate}">
+                                    <ComboBoxItem Content="Каждую неделю" Tag="EveryWeek"/>
+                                    <ComboBoxItem Content="Неделя А" Tag="WeekA"/>
+                                    <ComboBoxItem Content="Неделя Б" Tag="WeekB"/>
+                                </ComboBox>
+                                <CheckBox Content="Подгруппы" IsChecked="{Binding NewCurriculumHasSubgroups}"
+                                          VerticalAlignment="Center" Margin="0,0,12,4"/>
+                                <Button Content="{Binding SaveCurriculumLabel}" Command="{Binding SaveCurriculumCommand}" Margin="0,0,8,4"/>
+                                <Button Content="Удалить строку" Command="{Binding DeleteCurriculumCommand}" Margin="0,0,8,4"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                                <Button Content="Отмена" Command="{Binding CancelEditCommand}" Margin="0,0,0,4"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                            </WrapPanel>
+                            <TextBlock Text="{Binding NewCurriculumDuplicateHint}" FontSize="10" Foreground="#DC2626" Margin="0,4,0,0"
+                                       Visibility="{Binding NewCurriculumDuplicateHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Expander Header="Шаблоны и копирование" IsExpanded="False"
+                              Margin="0,0,0,8" Padding="0,4,0,0">
+                        <TabControl>
+                            <TabItem Header="Шаблон нагрузки">
+                                <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,4,0,0">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" MinWidth="0"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                                <TextBlock Text="Шаблон" Style="{StaticResource FormFieldLabelStyle}"/>
+                                                <ComboBox ItemsSource="{Binding CurriculumTemplateList}"
+                                                          SelectedItem="{Binding SelectedCurriculumTemplate}"
+                                                          HorizontalAlignment="Stretch" MinWidth="0">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                                                <TextBlock Text="{Binding KindLabel}" FontSize="10"
+                                                                           Foreground="{StaticResource MutedTextBrush}"
+                                                                           Margin="6,0,0,0"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                                <Button Content="Создать" Style="{StaticResource SmallButtonStyle}" Margin="0,0,6,0"
+                                                        Command="{Binding CreateCurriculumTemplateCommand}"
+                                                        ToolTip="Свой шаблон для выбранной параллели"/>
+                                                <Button Content="Копия" Style="{StaticResource SmallButtonStyle}" Margin="0,0,6,0"
+                                                        Command="{Binding CopyCurriculumTemplateCommand}"
+                                                        IsEnabled="{Binding CanCopyCurriculumTemplate}"
+                                                        ToolTip="Скопировать шаблон для редактирования"/>
+                                                <Button Content="Удалить" Style="{StaticResource SecondaryButtonStyle}"
+                                                        Command="{Binding DeleteCurriculumTemplateCommand}"
+                                                        IsEnabled="{Binding CanDeleteCurriculumTemplate}"
+                                                        ToolTip="Удалить свой шаблон"/>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <TextBlock Grid.Row="1" Text="{Binding CurriculumTemplateManageHint}" FontSize="11"
+                                                   Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
+                                                   Margin="0,0,0,10"/>
+
+                                        <Border Grid.Row="2" Background="White" BorderBrush="{StaticResource BorderBrush}"
+                                                BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" MinWidth="120"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                                    <TextBlock Text="Название" Style="{StaticResource FormFieldLabelStyle}"/>
+                                                    <TextBox Text="{Binding EditCurriculumTemplateName, UpdateSourceTrigger=PropertyChanged}"
+                                                             HorizontalAlignment="Stretch" MinWidth="0"
+                                                             IsReadOnly="{Binding IsCurriculumTemplateBuiltIn}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                                    <TextBlock Text="Параллель" Style="{StaticResource FormFieldLabelStyle}"/>
+                                                    <ComboBox Width="88"
+                                                              SelectedValue="{Binding EditCurriculumTemplateGrade}"
+                                                              SelectedValuePath="Tag"
+                                                              IsEnabled="{Binding CanEditCurriculumTemplate}">
+                                                        <ComboBoxItem Content="1" Tag="1"/>
+                                                        <ComboBoxItem Content="2" Tag="2"/>
+                                                        <ComboBoxItem Content="3" Tag="3"/>
+                                                        <ComboBoxItem Content="4" Tag="4"/>
+                                                        <ComboBoxItem Content="5" Tag="5"/>
+                                                        <ComboBoxItem Content="6" Tag="6"/>
+                                                        <ComboBoxItem Content="7" Tag="7"/>
+                                                        <ComboBoxItem Content="8" Tag="8"/>
+                                                        <ComboBoxItem Content="9" Tag="9"/>
+                                                        <ComboBoxItem Content="10" Tag="10"/>
+                                                        <ComboBoxItem Content="11" Tag="11"/>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                                <Button Grid.Column="2" Content="Сохранить" VerticalAlignment="Bottom"
+                                                        MinWidth="104"
+                                                        Command="{Binding SaveCurriculumTemplateCommand}"
+                                                        IsEnabled="{Binding CanEditCurriculumTemplate}"/>
+                                            </Grid>
+                                        </Border>
+
+                                        <Grid Grid.Row="3">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" MinWidth="0"/>
+                                                <ColumnDefinition Width="12"/>
+                                                <ColumnDefinition Width="220" MinWidth="180"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid Grid.Column="0" MinWidth="0">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderThickness="1" CornerRadius="8,8,0,0" Padding="8,8,8,6"
+                                                        Visibility="{Binding CanEditCurriculumTemplate, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" MinWidth="0"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                                            <TextBlock Text="Предмет" Style="{StaticResource FormFieldLabelStyle}"/>
+                                                            <ComboBox ItemsSource="{Binding FilteredSubjectList}" DisplayMemberPath="Name"
+                                                                      SelectedItem="{Binding NewTemplateItemSubject}"
+                                                                      HorizontalAlignment="Stretch" MinWidth="0"/>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="1" Margin="0,0,8,0" Width="56">
+                                                            <TextBlock Text="Ч/нед" Style="{StaticResource FormFieldLabelStyle}"/>
+                                                            <TextBox Text="{Binding NewTemplateItemHours}"/>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="2" Margin="0,0,8,0" Width="64">
+                                                            <TextBlock Text="Сивков" Style="{StaticResource FormFieldLabelStyle}"/>
+                                                            <TextBox Text="{Binding NewTemplateItemDifficulty}"/>
+                                                        </StackPanel>
+                                                        <CheckBox Grid.Column="3" Content="П/г" VerticalAlignment="Bottom" Margin="0,0,8,2"
+                                                                  IsChecked="{Binding NewTemplateItemHasSubgroups}"/>
+                                                        <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                                            <Button Content="Добавить" Style="{StaticResource SmallButtonStyle}" Margin="0,0,6,0"
+                                                                    Command="{Binding AddCurriculumTemplateItemCommand}"/>
+                                                            <Button Content="Убрать" Style="{StaticResource SecondaryButtonStyle}"
+                                                                    Command="{Binding RemoveCurriculumTemplateItemCommand}"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                                <Border Grid.Row="1" Style="{StaticResource DirectoriesTableCardStyle}" Margin="0,8,0,0">
+                                                <DataGrid ItemsSource="{Binding EditCurriculumTemplateItems}"
+                                                          SelectedItem="{Binding SelectedEditTemplateItem}"
+                                                          Style="{StaticResource CrudDataGridStyle}"
+                                                          AutoGenerateColumns="False" CanUserAddRows="False"
+                                                          CanUserDeleteRows="False" HeadersVisibility="Column"
+                                                          GridLinesVisibility="Horizontal"
+                                                          Margin="0"
+                                                          MaxHeight="220"
+                                                          IsReadOnly="{Binding IsCurriculumTemplateBuiltIn}">
+                                                    <DataGrid.Columns>
+                                                        <DataGridTextColumn Header="Предмет" Binding="{Binding SubjectName}" Width="*">
+                                                            <DataGridTextColumn.ElementStyle>
+                                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadSubjectTextStyle}"/>
+                                                            </DataGridTextColumn.ElementStyle>
+                                                        </DataGridTextColumn>
+                                                        <DataGridTextColumn Header="Ч/нед" Binding="{Binding HoursPerWeek}" Width="56">
+                                                            <DataGridTextColumn.ElementStyle>
+                                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadNumericTextStyle}"/>
+                                                            </DataGridTextColumn.ElementStyle>
+                                                        </DataGridTextColumn>
+                                                        <DataGridTextColumn Header="Сивков" Binding="{Binding DifficultyScore}" Width="60">
+                                                            <DataGridTextColumn.ElementStyle>
+                                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadNumericTextStyle}"/>
+                                                            </DataGridTextColumn.ElementStyle>
+                                                        </DataGridTextColumn>
+                                                        <DataGridCheckBoxColumn Header="П/г" Binding="{Binding HasSubgroups}" Width="40">
+                                                            <DataGridCheckBoxColumn.ElementStyle>
+                                                                <Style TargetType="CheckBox" BasedOn="{StaticResource CurriculumLoadGridCheckBoxStyle}"/>
+                                                            </DataGridCheckBoxColumn.ElementStyle>
+                                                        </DataGridCheckBoxColumn>
+                                                        <DataGridTextColumn Header="Неделя" Binding="{Binding WeekParityDisplay}" Width="108"
+                                                                            IsReadOnly="True">
+                                                            <DataGridTextColumn.ElementStyle>
+                                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadMutedTextStyle}"/>
+                                                            </DataGridTextColumn.ElementStyle>
+                                                        </DataGridTextColumn>
+                                                    </DataGrid.Columns>
+                                                </DataGrid>
+                                                </Border>
+                                                <TextBlock Grid.Row="2" FontSize="10" Foreground="{StaticResource MutedTextBrush}"
+                                                           Margin="0,6,0,0" TextWrapping="Wrap"
+                                                           Text="Строки шаблона — это набор предметов и часов для параллели. «Применить» добавит их в нагрузку выбранных классов."/>
+                                            </Grid>
+                                            <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="8" Padding="12,10"
+                                                    Background="White" VerticalAlignment="Stretch">
+                                                <DockPanel LastChildFill="True">
+                                                    <TextBlock DockPanel.Dock="Top" Text="Применить к классам"
+                                                               FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4"/>
+                                                    <TextBlock DockPanel.Dock="Top"
+                                                               Text="Отметьте классы той же параллели — нагрузка подставится из шаблона."
+                                                               FontSize="10" Foreground="{StaticResource MutedTextBrush}"
+                                                               TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                                    <Button DockPanel.Dock="Bottom" Content="Применить к выбранным"
+                                                            Command="{Binding ApplyCurriculumTemplateCommand}"
+                                                            MinHeight="32" Margin="0,10,0,0" HorizontalAlignment="Stretch"/>
+                                                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                                                  HorizontalScrollBarVisibility="Disabled"
+                                                                  MaxHeight="180">
+                                                        <ItemsControl ItemsSource="{Binding CurriculumTemplateTargetClasses}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <CheckBox Content="{Binding DisplayName}"
+                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                              Margin="0,0,0,6"/>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </ScrollViewer>
+                                                </DockPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </TabItem>
+                            <TabItem Header="Копирование в параллель">
+                                <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,4,0,0">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="Скопировать нагрузку одного класса в другие той же параллели"
+                                                   FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <TextBlock Grid.Row="1"
+                                                   Text="Удобно, когда несколько классов одного уровня должны получить одинаковый набор предметов."
+                                                   FontSize="11" Foreground="{StaticResource MutedTextBrush}"
+                                                   TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                        <Grid Grid.Row="2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="180" MinWidth="140"/>
+                                                <ColumnDefinition Width="12"/>
+                                                <ColumnDefinition Width="*" MinWidth="0"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Из класса" Style="{StaticResource FormFieldLabelStyle}"/>
+                                                <ComboBox ItemsSource="{Binding ClassList}" DisplayMemberPath="DisplayName"
+                                                          SelectedItem="{Binding CurriculumCopySourceClass}"
+                                                          HorizontalAlignment="Stretch" MinWidth="0"/>
+                                            </StackPanel>
+                                            <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="8" Padding="12,10" Background="White">
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Top" Text="В классы"
+                                                               Style="{StaticResource FormFieldLabelStyle}" Margin="0,0,0,8"/>
+                                                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                                                  HorizontalScrollBarVisibility="Disabled"
+                                                                  MaxHeight="180">
+                                                        <ItemsControl ItemsSource="{Binding CurriculumCopyTargetClasses}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <CheckBox Content="{Binding DisplayName}"
+                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                              Margin="0,0,12,6"/>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </ScrollViewer>
+                                                </DockPanel>
+                                            </Border>
+                                        </Grid>
+                                        <Button Grid.Row="3" Content="Копировать нагрузку" HorizontalAlignment="Left"
+                                                MinWidth="180" Margin="0,12,0,0"
+                                                Command="{Binding CopyCurriculumToClassesCommand}"/>
+                                    </Grid>
+                                </Border>
+                            </TabItem>
+                        </TabControl>
+                    </Expander>
+
+                    <Border Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,8">
+                        <StackPanel>
+                            <TextBlock Text="Часы по программе (ФОП)" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <TextBlock Text="Добавляет недостающие предметы. Уже заполненная нагрузка и баллы Сивкова не меняются без отдельного подтверждения."
+                                       Style="{StaticResource SidePanelHelpTextStyle}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                            <WrapPanel>
+                                <TextBlock Text="Класс:" VerticalAlignment="Center" Margin="0,0,6,4" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <ComboBox ItemsSource="{Binding ClassList}" SelectedItem="{Binding FopImportClass}"
+                                          DisplayMemberPath="DisplayName" Width="100" Margin="0,0,12,4"/>
+                                <Button Content="Добавить недостающие" Command="{Binding ImportFopGapsForClassCommand}" Margin="0,0,8,4"/>
+                                <Button Content="Перезаписать часы…" Command="{Binding ImportFopOverwriteForClassCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,12,4"/>
+                                <TextBlock Text="Параллель:" VerticalAlignment="Center" Margin="0,0,6,4" Style="{StaticResource FormFieldLabelStyle}"/>
+                                <TextBox Width="36" Text="{Binding FopImportGrade}" Margin="0,0,8,4"/>
+                                <Button Content="Добавить для параллели" Command="{Binding ImportFopGapsForGradeCommand}" Margin="0,0,8,4"/>
+                                <Button Content="Перезаписать часы параллели…" Command="{Binding ImportFopOverwriteForGradeCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,0,4"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Margin="0,0,0,6" Padding="0,4">
+                        <DockPanel LastChildFill="False">
+                            <TextBlock Text="Нагрузка по классам" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <Button DockPanel.Dock="Right"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    Width="32" Height="28" FontSize="12"
+                                    Content="{Binding CurriculumGroupsToggleIcon}"
+                                    ToolTip="{Binding CurriculumGroupsToggleToolTip}"
+                                    Command="{Binding ToggleCurriculumGroupsExpandedCommand}"/>
+                        </DockPanel>
+                    </Border>
+                    <ItemsControl ItemsSource="{Binding CurriculumGroups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource CurriculumLoadClassCardStyle}">
+                                    <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                                              Style="{StaticResource CurriculumLoadExpanderStyle}">
+                                        <Expander.Header>
+                                            <Grid Margin="0,0,4,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding ClassName}" FontWeight="SemiBold" FontSize="14"
+                                                               VerticalAlignment="Center" Foreground="{StaticResource TextBrush}"/>
+                                                    <Border Background="#E2E8F0" CornerRadius="10" Padding="8,2" Margin="10,0,0,0"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding ItemCount, StringFormat='{}{0} предм.'}"
+                                                                   FontSize="11" Foreground="{StaticResource MutedTextBrush}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" Content="🗑"
+                                                        Style="{StaticResource RowIconDangerButtonStyle}"
+                                                        Margin="4,0,0,0"
+                                                        PreviewMouseDown="ExpanderActionButton_PreviewMouseDown"
+                                                        Command="{Binding DataContext.DeleteCurriculumClassCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Удалить всю нагрузку класса"/>
+                                            </Grid>
+                                        </Expander.Header>
+                                        <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True"
+                                                  Style="{StaticResource CurriculumLoadDataGridStyle}"
+                                                  helpers:DataGridCrudBehaviors.BoundSelectedItem="{Binding DataContext.SelectedCurriculumGridRow, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                                                  helpers:DataGridCrudBehaviors.EditRowCommand="{Binding DataContext.EditCurriculumRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  helpers:DataGridCrudBehaviors.DeleteRowCommand="{Binding DataContext.DeleteCurriculumRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  helpers:DataGridCrudBehaviors.ClearSelectionCommand="{Binding DataContext.BeginNewCurriculumCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                                  CanUserAddRows="False" CanUserDeleteRows="False"
+                                                  Margin="0">
+                                            <DataGrid.Columns>
+                                                <DataGridTemplateColumn Width="40"
+                                                                        HeaderTemplate="{StaticResource DataGridCheckboxHeaderTemplate}"
+                                                                        CellTemplate="{StaticResource DataGridCheckboxCellTemplate}"/>
+                                                <DataGridTextColumn Header="Предмет" Binding="{Binding Item.SubjectName}" Width="*">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadSubjectTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTemplateColumn Header="Сивков" Width="68">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBox Text="{Binding DifficultyText, UpdateSourceTrigger=LostFocus}"
+                                                                     Style="{StaticResource CurriculumLoadInlineTextStyle}"
+                                                                     ToolTip="Балл Сивкова — Enter или клик вне поля для сохранения"/>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="Ч/нед" Width="60">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBox Text="{Binding HoursText, UpdateSourceTrigger=LostFocus}"
+                                                                     Style="{StaticResource CurriculumLoadInlineTextStyle}"
+                                                                     ToolTip="Часы в неделю — Enter или клик вне поля для сохранения"/>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTextColumn Header="Неделя" Binding="{Binding Item.WeekParityDisplay}" Width="110">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadMutedTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTemplateColumn Header="Педагог" Width="160">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <ComboBox Style="{StaticResource CurriculumLoadInlineComboStyle}"
+                                                                      ItemsSource="{Binding DataContext.TeacherPickList, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                      SelectedItem="{Binding PrimaryTeacher, UpdateSourceTrigger=PropertyChanged}"
+                                                                      DisplayMemberPath="FullName"
+                                                                      IsEditable="True"
+                                                                      IsTextSearchEnabled="True"
+                                                                      TextSearch.TextPath="FullName"
+                                                                      ToolTip="Педагог подгруппы 1. Если ведёт обе п/г — укажите только здесь, «Пед. 2» оставьте пустым"/>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="Пед. 2" Width="160">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <ComboBox Style="{StaticResource CurriculumLoadInlineComboStyle}"
+                                                                      ItemsSource="{Binding DataContext.TeacherPickList, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                      SelectedItem="{Binding SecondaryTeacher, UpdateSourceTrigger=PropertyChanged}"
+                                                                      DisplayMemberPath="FullName"
+                                                                      IsEditable="True"
+                                                                      IsEnabled="{Binding HasSubgroups}"
+                                                                      IsTextSearchEnabled="True"
+                                                                      TextSearch.TextPath="FullName"
+                                                                      ToolTip="Педагог подгруппы 2 — только если ведёт другой человек. Один на обе п/г: оставьте пустым"/>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="Подгр." Width="56">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <CheckBox IsChecked="{Binding HasSubgroups, UpdateSourceTrigger=PropertyChanged}"
+                                                                      Style="{StaticResource CurriculumLoadGridCheckBoxStyle}"
+                                                                      ToolTip="Класс делится на 2 подгруппы. Часы по ФОП не удваиваются"/>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="" Width="68" CellTemplate="{StaticResource DataGridRowActionsTemplate}"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Expander>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="Звонки">
+                <Grid Margin="12,8,12,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource CrudFormPanelStyle}" Margin="0,0,0,8">
+                        <StackPanel>
+                            <TextBlock Text="Какой шаблон у каких классов" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <TextBlock Text="Здесь задаётся только время уроков. Содержимое расписания — в конструкторе. Отдельный шаблон для класса — во вкладке «Классы»."
+                                       Style="{StaticResource FormFieldLabelStyle}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                            <WrapPanel Style="{StaticResource CrudFormWrapStyle}">
+                                <StackPanel Width="200" Margin="0,0,8,4">
+                                    <TextBlock Text="1 класс · I полугодие" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <ComboBox IsEditable="True" ItemsSource="{Binding BellTemplateNames}"
+                                              Text="{Binding DefaultBellGrade1, UpdateSourceTrigger=PropertyChanged}"
+                                              ToolTip="Шаблон для 1-х классов с сентября по декабрь"/>
+                                </StackPanel>
+                                <StackPanel Width="200" Margin="0,0,8,4">
+                                    <TextBlock Text="1 класс · II полугодие" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <ComboBox IsEditable="True" ItemsSource="{Binding BellTemplateNames}"
+                                              Text="{Binding DefaultBellGrade1SecondHalf, UpdateSourceTrigger=PropertyChanged}"
+                                              ToolTip="Шаблон для 1-х классов с января по июнь"/>
+                                </StackPanel>
+                                <StackPanel Width="200" Margin="0,0,8,4">
+                                    <TextBlock Text="2–11 · 1 смена" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <ComboBox IsEditable="True" ItemsSource="{Binding BellTemplateNames}"
+                                              Text="{Binding DefaultBellShift1, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <StackPanel Width="200" Margin="0,0,8,4">
+                                    <TextBlock Text="2–11 · 2 смена" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <ComboBox IsEditable="True" ItemsSource="{Binding BellTemplateNames}"
+                                              Text="{Binding DefaultBellShift2, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <Button Content="Сохранить назначения" Command="{Binding SaveBellDefaultsCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,18,0,4"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="260" MinWidth="220"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*" MinWidth="360"/>
+                        </Grid.ColumnDefinitions>
+
+                        <DockPanel Grid.Column="0">
+                            <Border DockPanel.Dock="Bottom" Style="{StaticResource ToolbarButtonGroupStyle}" Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource ToolbarGroupItemStyle}" Margin="0,0,4,0"
+                                            Command="{Binding CreateBellTemplateCommand}"
+                                            ToolTip="Пустой шаблон">
+                                        <TextBlock Text="＋" FontSize="14"/>
+                                    </Button>
+                                    <Button Style="{StaticResource ToolbarGroupItemStyle}" Margin="0,0,4,0"
+                                            Command="{Binding DuplicateBellTemplateCommand}"
+                                            ToolTip="Копия выбранного шаблона">
+                                        <TextBlock Text="⎘" FontSize="14"/>
+                                    </Button>
+                                    <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                            Command="{Binding DeleteBellTemplateCommand}"
+                                            ToolTip="Удалить выбранный шаблон">
+                                        <TextBlock Text="🗑" FontSize="13" Foreground="{StaticResource DangerBrush}"/>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                            <TextBlock DockPanel.Dock="Top" Text="Шаблоны" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <Border Style="{StaticResource DirectoriesTableCardStyle}">
+                                <ListBox ItemsSource="{Binding BellTemplateCards}"
+                                         SelectedItem="{Binding SelectedBellTemplateCard}"
+                                         BorderThickness="0" Background="Transparent"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="4,6">
+                                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding GradeRangeDisplay}" FontSize="11"
+                                                           Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,0"/>
+                                                <TextBlock Text="{Binding SummaryLine}" FontSize="11"
+                                                           Foreground="{StaticResource MutedTextBrush}" Margin="0,1,0,0"/>
+                                                <TextBlock Text="{Binding DefaultUsageDisplay}" FontSize="10"
+                                                           Foreground="#2563EB" Margin="0,3,0,0"
+                                                           Visibility="{Binding DefaultUsageDisplay, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                        </DockPanel>
+
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Style="{StaticResource CrudFormPanelStyle}" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="Свойства шаблона" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <WrapPanel Style="{StaticResource CrudFormWrapStyle}">
+                                        <StackPanel Width="220" Margin="0,0,8,4">
+                                            <TextBlock Text="Название" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBox Text="{Binding EditBellTemplateName, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                        <StackPanel Width="72" Margin="0,0,8,4">
+                                            <TextBlock Text="С класса" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBox Text="{Binding EditBellGradeFrom, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                        <StackPanel Width="72" Margin="0,0,8,4">
+                                            <TextBlock Text="По класс" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBox Text="{Binding EditBellGradeTo, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                        <Button Content="Сохранить шаблон" Command="{Binding SaveBellTemplateMetaCommand}"
+                                                Margin="0,18,0,4"/>
+                                    </WrapPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
+                                                Visibility="{Binding BellEditorShiftSelectorVisible, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                        <TextBlock Text="Смена:" VerticalAlignment="Center" Style="{StaticResource FormFieldLabelStyle}" Margin="0,0,8,0"/>
+                                        <RadioButton Content="1" GroupName="BellEditorShift" Margin="0,0,12,0"
+                                                     IsChecked="{Binding IsBellEditorShift1Selected}"/>
+                                        <RadioButton Content="2" GroupName="BellEditorShift"
+                                                     IsChecked="{Binding IsBellEditorShift2Selected}"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding BellEditorSummary}" FontSize="11"
+                                               Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    <Button Content="Создать перемены" Command="{Binding GenerateBellBreaksCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}" Margin="0,8,0,0" HorizontalAlignment="Left"
+                                            ToolTip="Заполнить промежутки между уроками переменами по фактическому времени. Можно отредактировать вручную."/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="1" Style="{StaticResource CrudFormPanelStyle}" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="Добавить или изменить строку" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock Text="Выберите строку в таблице для правки или заполните поля ниже — время следующего слота подставится само."
+                                               Style="{StaticResource FormFieldLabelStyle}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                    <WrapPanel Style="{StaticResource CrudFormWrapStyle}">
+                                        <StackPanel Width="130" Margin="0,0,8,4">
+                                            <TextBlock Text="Тип" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <ComboBox SelectedValue="{Binding NewBellPeriodKind}" SelectedValuePath="Tag">
+                                                <ComboBoxItem Content="Урок" Tag="Lesson"/>
+                                                <ComboBoxItem Content="Перемена" Tag="Break"/>
+                                                <ComboBoxItem Content="Дин. пауза" Tag="DynamicPause"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Width="72" Margin="0,0,8,4">
+                                            <TextBlock Text="№ / после" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <TextBox Text="{Binding NewBellLessonNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                     ToolTip="Номер урока; для паузы — после какого"
+                                                     helpers:DuplicateHighlight.IsDuplicate="{Binding IsNewBellDuplicate}"/>
+                                        </StackPanel>
+                                        <StackPanel Width="88" Margin="0,0,8,4"
+                                                    Visibility="{Binding ShowBellDurationSelector, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                            <TextBlock Text="Урок, мин" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <ComboBox ItemsSource="{Binding BellLessonDurationOptions}"
+                                                      SelectedItem="{Binding NewBellLessonDurationMinutes}"
+                                                      ToolTip="Длительность урока или дин. паузы — «По» подставится автоматически"/>
+                                        </StackPanel>
+                                        <StackPanel Width="132" Margin="0,0,8,4">
+                                            <TextBlock Text="С" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <DockPanel LastChildFill="True">
+                                                <Button DockPanel.Dock="Left" Content="−" Width="24" Padding="0"
+                                                        Command="{Binding ShiftBellStartTimeCommand}" CommandParameter="-5"
+                                                        ToolTip="На 5 минут раньше"/>
+                                                <Button DockPanel.Dock="Right" Content="+" Width="24" Padding="0"
+                                                        Command="{Binding ShiftBellStartTimeCommand}" CommandParameter="5"
+                                                        ToolTip="На 5 минут позже"/>
+                                                <TextBox Text="{Binding NewBellStartTime, UpdateSourceTrigger=PropertyChanged}"
+                                                         ToolTip="ЧЧ:ММ — можно вводить 0830 без двоеточия" Margin="4,0"/>
+                                            </DockPanel>
+                                        </StackPanel>
+                                        <StackPanel Width="132" Margin="0,0,8,4">
+                                            <TextBlock Text="По" Style="{StaticResource FormFieldLabelStyle}"/>
+                                            <DockPanel LastChildFill="True">
+                                                <Button DockPanel.Dock="Left" Content="−" Width="24" Padding="0"
+                                                        Command="{Binding ShiftBellEndTimeCommand}" CommandParameter="-5"
+                                                        ToolTip="На 5 минут раньше"/>
+                                                <Button DockPanel.Dock="Right" Content="+" Width="24" Padding="0"
+                                                        Command="{Binding ShiftBellEndTimeCommand}" CommandParameter="5"
+                                                        ToolTip="На 5 минут позже"/>
+                                                <TextBox Text="{Binding NewBellEndTime, UpdateSourceTrigger=PropertyChanged}"
+                                                         ToolTip="ЧЧ:ММ — можно вводить 0910 без двоеточия" Margin="4,0"/>
+                                            </DockPanel>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,18,0,4">
+                                            <Button Content="{Binding SaveBellLabel}" Command="{Binding SaveBellCommand}" Margin="0,0,8,0"/>
+                                            <Button Content="Удалить" Command="{Binding DeleteBellCommand}" Margin="0,0,8,0"
+                                                    Style="{StaticResource SecondaryButtonStyle}"/>
+                                            <Button Content="Отмена" Command="{Binding CancelBellEditCommand}"
+                                                    Style="{StaticResource SecondaryButtonStyle}"/>
+                                        </StackPanel>
+                                    </WrapPanel>
+                                    <TextBlock Text="{Binding NewBellDuplicateHint}" FontSize="10" Foreground="#DC2626" Margin="0,4,0,0"
+                                               Visibility="{Binding NewBellDuplicateHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="2" Style="{StaticResource DirectoriesTableCardStyle}">
+                                <DataGrid ItemsSource="{Binding SelectedTemplateTimeline}" AutoGenerateColumns="False" IsReadOnly="True"
+                                          Style="{StaticResource CrudDataGridStyle}"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="Horizontal"
+                                          CanUserResizeColumns="True"
+                                          HorizontalAlignment="Stretch"
+                                          SelectedItem="{Binding SelectedBell}"
+                                          helpers:DataGridCrudBehaviors.EditRowCommand="{Binding EditBellRowCommand}"
+                                          helpers:DataGridCrudBehaviors.DeleteRowCommand="{Binding DeleteBellRowCommand}">
+                                    <DataGrid.InputBindings>
+                                        <KeyBinding Key="Delete" Command="{Binding DeleteBellCommand}"/>
+                                    </DataGrid.InputBindings>
+                                    <DataGrid.Columns>
+                                        <DataGridTemplateColumn Width="40" CanUserResize="False"
+                                                                HeaderTemplate="{StaticResource DataGridCheckboxHeaderTemplate}"
+                                                                CellTemplate="{StaticResource DataGridCheckboxCellTemplate}"/>
+                                        <DataGridTextColumn Header="Тип" Binding="{Binding PeriodKindDisplay}" Width="80" MinWidth="72">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadMutedTextStyle}">
+                                                    <Setter Property="TextTrimming" Value="None"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Слот" Binding="{Binding SlotLabel}" Width="2*" MinWidth="160">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadSubjectTextStyle}">
+                                                    <Setter Property="TextTrimming" Value="None"/>
+                                                    <Setter Property="TextWrapping" Value="NoWrap"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Начало" Binding="{Binding StartTime}" Width="80" MinWidth="72">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadNumericTextStyle}">
+                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                    <Setter Property="TextTrimming" Value="None"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Конец" Binding="{Binding EndTime}" Width="80" MinWidth="72">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadNumericTextStyle}">
+                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                    <Setter Property="TextTrimming" Value="None"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Мин" Binding="{Binding DurationMinutesDisplay}" Width="56" MinWidth="48">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CurriculumLoadNumericTextStyle}">
+                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                    <Setter Property="TextTrimming" Value="None"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTemplateColumn Header="" Width="68" CanUserResize="False"
+                                                                CellTemplate="{StaticResource DataGridRowActionsTemplate}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Border>
+
+                            <Border Grid.Row="3" Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,8,0,0">
+                                <TextBlock Text="{Binding BellEditorHelpText}" Style="{StaticResource SidePanelHelpTextStyle}" Margin="0"/>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Настройки">
+                <controls:ScrollableTabContent Padding="12,8,12,16">
+                <StackPanel HorizontalAlignment="Stretch">
+                    <Border Style="{StaticResource CrudFormPanelStyle}" Margin="0,0,0,16">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Text="Название школы" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox Grid.Row="1" Grid.Column="0"
+                                     Text="{Binding SchoolName, UpdateSourceTrigger=PropertyChanged}"
+                                     VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <Button Grid.Row="1" Grid.Column="1" Content="Сохранить"
+                                    Command="{Binding SaveSettingsCommand}"
+                                    VerticalAlignment="Center" MinWidth="120"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Text="Отображается в заголовке окна и на листах замен при экспорте."
+                                       FontSize="11" Foreground="{StaticResource MutedTextBrush}"
+                                       TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <Grid HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="340" MinWidth="280"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*" MinWidth="360"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <Border Style="{StaticResource CrudFormPanelStyle}" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="Полный перенос" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock Text="Выгрузите все данные в один файл или полностью замените текущую базу содержимым архива. Подходит для переноса на другой компьютер."
+                                               FontSize="11" Foreground="{StaticResource MutedTextBrush}"
+                                               TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Выгрузить всё…" Command="{Binding ExportAppDataCommand}" Margin="0,0,8,0"/>
+                                        <Button Content="Загрузить всё…" Command="{Binding ImportAppDataCommand}"
+                                                Style="{StaticResource SecondaryButtonStyle}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CrudFormPanelStyle}" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="Очистка по разделам" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock Text="Удаляет данные одной вкладки справочника. Связанные уроки в расписании могут быть затронуты — подробности в диалоге подтверждения."
+                                               FontSize="11" Foreground="{StaticResource MutedTextBrush}"
+                                               TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                    <ItemsControl ItemsSource="{Binding DirectoryClearOptions}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1"
+                                                        Padding="0,0,0,10" Margin="0,0,0,10">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                                            <TextBlock Text="{Binding TabName}" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="{Binding Hint}" FontSize="11"
+                                                                       Foreground="{StaticResource MutedTextBrush}"
+                                                                       TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1" Content="Очистить"
+                                                                Style="{StaticResource SmallDangerButtonStyle}"
+                                                                Command="{Binding DataContext.ClearDirectorySectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding Section}"
+                                                                VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CrudFormPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Опасная зона" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <TextBlock Text="Удаляет справочники, расписание, календарь и замены. Встроенные шаблоны звонков и нагрузки по параллелям сохраняются. Название школы останется."
+                                               FontSize="11" Foreground="{StaticResource MutedTextBrush}"
+                                               TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                    <Button Content="Очистить всё" Command="{Binding ClearAllDataCommand}"
+                                            Style="{StaticResource DangerButtonStyle}" HorizontalAlignment="Left"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <Border Grid.Column="2" Style="{StaticResource CrudFormPanelStyle}" VerticalAlignment="Top">
+                            <StackPanel>
+                                <TextBlock Text="Выборочный перенос" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBlock Text="Обновите только нужные разделы: например, подтяните сотрудников из архива прошлого года, не трогая расписание. Работает и с полным архивом, и с частичной выгрузкой."
+                                           FontSize="11" Foreground="{StaticResource MutedTextBrush}"
+                                           TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="Разделы" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <WrapPanel Margin="0,0,0,8">
+                                    <Button Content="Все" Command="{Binding SelectAllTransferSectionsCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,6,6" Padding="10,4"/>
+                                    <Button Content="Справочники" Command="{Binding SelectDirectoryTransferSectionsCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,6,6" Padding="10,4"/>
+                                    <Button Content="Снять выбор" Command="{Binding ClearTransferSectionsCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,6,6" Padding="10,4"/>
+                                </WrapPanel>
+
+                                <ItemsControl ItemsSource="{Binding TransferSections}" Margin="0,0,0,12">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="2"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1"
+                                                    Padding="0,0,8,8" Margin="0,0,8,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" Margin="0,2,10,0"
+                                                              IsEnabled="{Binding IsAvailable}" VerticalAlignment="Top"/>
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="{Binding Hint}" FontSize="11"
+                                                                   Foreground="{StaticResource MutedTextBrush}"
+                                                                   TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <TextBlock Text="Режим загрузки" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <RadioButton Content="Дополнить / обновить" GroupName="TransferImportMode"
+                                                 IsChecked="{Binding IsTransferMergeMode}" Margin="0,0,16,0"/>
+                                    <RadioButton Content="Заменить выбранное" GroupName="TransferImportMode"
+                                                 IsChecked="{Binding IsTransferReplaceMode}"/>
+                                </StackPanel>
+                                <TextBlock Text="Дополнение сопоставляет записи по названию/ФИО и добавляет новые. Замена удаляет выбранный раздел и загружает его из архива."
+                                           FontSize="11" Foreground="{StaticResource MutedTextBrush}"
+                                           TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Выгрузить выбранное…" Command="{Binding ExportSelectiveAppDataCommand}" Margin="0,0,8,0"/>
+                                    <Button Content="Загрузить выбранное…" Command="{Binding ImportSelectiveAppDataCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+                </controls:ScrollableTabContent>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

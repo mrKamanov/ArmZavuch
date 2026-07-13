@@ -1,0 +1,1160 @@
+<UserControl x:Class="ArmZavuch.Views.DispatcherView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ArmZavuch.Views.Converters"
+             xmlns:controls="clr-namespace:ArmZavuch.Views.Controls"
+             xmlns:views="clr-namespace:ArmZavuch.Views">
+    <UserControl.Resources>
+        <conv:PositiveToVisibleConverter x:Key="PositiveToVisible"/>
+
+        <Style x:Key="DispatcherModeTabItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="bd" Background="#F1F5F9" CornerRadius="6"
+                                Padding="{TemplateBinding Padding}"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#EFF6FF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DispatcherLessonRowStyle" TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsCancelled}" Value="True">
+                    <Setter Property="Background" Value="#F8FAFC"/>
+                    <Setter Property="Foreground" Value="#94A3B8"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding NeedsReplacement}" Value="True">
+                    <Setter Property="Background" Value="#FEF2F2"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasAssignedReplacement}" Value="True">
+                    <Setter Property="Background" Value="#F0FDF4"/>
+                </DataTrigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#DBEAFE"/>
+                    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DispatcherScheduleGridStyle" TargetType="DataGrid" BasedOn="{StaticResource CrudDataGridStyle}">
+            <Setter Property="RowStyle" Value="{StaticResource DispatcherLessonRowStyle}"/>
+            <Setter Property="CanUserSortColumns" Value="False"/>
+        </Style>
+
+        <Style x:Key="DispatcherCandidateRowStyle" TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="bd" Background="White" BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="10,8" Cursor="Hand">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#EFF6FF"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#93C5FD"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#F8FAFC"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="DispatcherCandidateTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{Binding TeacherName}" FontWeight="SemiBold" FontSize="12"/>
+                    <TextBlock Text="{Binding CurrentLocation}" FontSize="10"
+                               Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,0"/>
+                    <TextBlock Text="{Binding RoleHint}" FontSize="10"
+                               Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
+                               Visibility="{Binding RoleHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top">
+                    <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1"
+                            CornerRadius="10" Padding="8,2" Margin="0,0,0,4">
+                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBrush}">
+                            <Run Text="{Binding Score, Mode=OneWay}"/>
+                            <Run Text=" б."/>
+                        </TextBlock>
+                    </Border>
+                    <TextBlock Text="⚠ опоздание" FontSize="10" Foreground="{StaticResource DangerBrush}"
+                               HorizontalAlignment="Right"
+                               Visibility="{Binding HasLateRisk, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+                    <TextBlock FontSize="10" Foreground="#B45309" HorizontalAlignment="Right" TextWrapping="Wrap"
+                               Visibility="{Binding HasShuttleWarning, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                        <Run Text="⚠ "/>
+                        <Run Text="{Binding ShuttleWarningText, Mode=OneWay}"/>
+                    </TextBlock>
+                    <TextBlock FontSize="10" Foreground="#B45309" HorizontalAlignment="Right"
+                               Visibility="{Binding HasLoadWarning, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                        <Run Text="⚠ "/>
+                        <Run Text="{Binding LessonsToday, Mode=OneWay}"/>
+                        <Run Text=" уроков за день"/>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="DispatcherStatChipTemplate">
+            <Border Background="{Binding AccentBackground}" BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="8,5"
+                    MinWidth="{Binding MinWidth}" Margin="0,0,6,0" VerticalAlignment="Top">
+                <StackPanel>
+                    <TextBlock Text="{Binding Label}" FontSize="10" Foreground="{StaticResource MutedTextBrush}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                        <TextBlock Text="{Binding Value}" FontSize="17" FontWeight="Bold"
+                                   Foreground="{Binding AccentForeground}" Margin="0,0,6,0"/>
+                        <TextBlock Text="{Binding Hint}" FontSize="9" Foreground="{StaticResource MutedTextBrush}"
+                                   VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="DispatcherStatCardTemplate">
+            <Border Background="{Binding AccentBackground}" BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1" CornerRadius="10" Padding="14,10"
+                    MinWidth="{Binding MinWidth}" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{StaticResource MutedTextBrush}"/>
+                    <TextBlock Text="{Binding Value}" FontSize="22" FontWeight="Bold"
+                               Foreground="{Binding AccentForeground}" Margin="0,2,0,0"/>
+                    <TextBlock Text="{Binding Hint}" FontSize="10" Foreground="{StaticResource MutedTextBrush}"/>
+                    <ItemsControl ItemsSource="{Binding DetailLines}" Margin="0,8,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontSize="10" Foreground="#7F1D1D"
+                                           TextWrapping="Wrap" Margin="0,0,0,4" LineHeight="14"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="DispatcherMonitorColumnHeaderTemplate">
+            <Border Width="152" MinWidth="152" Margin="1" Padding="6,5" CornerRadius="6"
+                    BorderBrush="Transparent" BorderThickness="2">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="#E2E8F0"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ColumnKind}" Value="DynamicPause">
+                                <Setter Property="Background" Value="#DCFCE7"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ColumnKind}" Value="Break">
+                                <Setter Property="Background" Value="#FEF3C7"/>
+                            </DataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSecondShift}" Value="True"/>
+                                    <Condition Binding="{Binding ColumnKind}" Value="Lesson"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Background" Value="#EDE9FE"/>
+                                <Setter Property="BorderBrush" Value="#C4B5FD"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                            </MultiDataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSecondShift}" Value="True"/>
+                                    <Condition Binding="{Binding ColumnKind}" Value="Break"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="BorderBrush" Value="#A78BFA"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                            </MultiDataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSecondShift}" Value="True"/>
+                                    <Condition Binding="{Binding ColumnKind}" Value="DynamicPause"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="BorderBrush" Value="#A78BFA"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                            </MultiDataTrigger>
+                            <DataTrigger Binding="{Binding IsShiftBoundary}" Value="True">
+                                <Setter Property="BorderBrush" Value="#7C3AED"/>
+                                <Setter Property="BorderThickness" Value="3,1,1,1"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsNow}" Value="True">
+                                <Setter Property="BorderBrush" Value="#F97316"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="2 смена" FontSize="8" FontWeight="SemiBold" Foreground="#6D28D9"
+                               HorizontalAlignment="Center" Margin="0,0,0,2"
+                               Visibility="{Binding IsShiftBoundary, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="10"
+                               HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding Time}" FontSize="9" Foreground="{StaticResource MutedTextBrush}"
+                               HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                    <Border Height="3" CornerRadius="2" Margin="0,4,0,0" Background="#F97316"
+                            Visibility="{Binding IsNow, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="DispatcherMonitorCellTemplate">
+            <Border x:Name="cell" Margin="1" Padding="5,4" CornerRadius="6"
+                    Width="152" MinWidth="152" MinHeight="104"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="White"/>
+                        <Setter Property="Cursor" Value="Arrow"/>
+                        <Setter Property="ToolTip">
+                            <Setter.Value>
+                                <ToolTip MaxWidth="360">
+                                    <TextBlock Text="{Binding ToolTip}" TextWrapping="Wrap"/>
+                                </ToolTip>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasLesson}" Value="True">
+                                <Setter Property="Cursor" Value="Hand"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ColumnKind}" Value="Window">
+                                <Setter Property="Background" Value="#F8FAFC"/>
+                                <Setter Property="BorderBrush" Value="#CBD5E1"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ColumnKind}" Value="Empty">
+                                <Setter Property="Background" Value="#FCFCFD"/>
+                                <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ColumnKind}" Value="DynamicPause">
+                                <Setter Property="Background" Value="#F0FDF4"/>
+                                <Setter Property="BorderBrush" Value="#BBF7D0"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ColumnKind}" Value="Break">
+                                <Setter Property="Background" Value="#FFFBEB"/>
+                                <Setter Property="BorderBrush" Value="#FDE68A"/>
+                            </DataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSecondShiftColumn}" Value="True"/>
+                                    <Condition Binding="{Binding ColumnKind}" Value="Empty"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Background" Value="#F5F3FF"/>
+                                <Setter Property="BorderBrush" Value="#DDD6FE"/>
+                            </MultiDataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSecondShiftColumn}" Value="True"/>
+                                    <Condition Binding="{Binding ColumnKind}" Value="Window"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Background" Value="#F5F3FF"/>
+                                <Setter Property="BorderBrush" Value="#DDD6FE"/>
+                            </MultiDataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSecondShiftColumn}" Value="True"/>
+                                    <Condition Binding="{Binding HasLesson}" Value="True"/>
+                                    <Condition Binding="{Binding HasConflict}" Value="False"/>
+                                    <Condition Binding="{Binding StatusKind}" Value="Normal"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Background" Value="#FAF5FF"/>
+                                <Setter Property="BorderBrush" Value="#DDD6FE"/>
+                            </MultiDataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSecondShiftColumn}" Value="True"/>
+                                    <Condition Binding="{Binding ColumnKind}" Value="Break"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="BorderBrush" Value="#C4B5FD"/>
+                            </MultiDataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSecondShiftColumn}" Value="True"/>
+                                    <Condition Binding="{Binding ColumnKind}" Value="DynamicPause"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="BorderBrush" Value="#C4B5FD"/>
+                            </MultiDataTrigger>
+                            <DataTrigger Binding="{Binding StatusKind}" Value="Pending">
+                                <Setter Property="Background" Value="#FEF2F2"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding StatusKind}" Value="Replacement">
+                                <Setter Property="Background" Value="#F0FDF4"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding StatusKind}" Value="Cancelled">
+                                <Setter Property="Background" Value="#F8FAFC"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding StatusKind}" Value="Unavailability">
+                                <Setter Property="Background" Value="#F5F3FF"/>
+                                <Setter Property="BorderBrush" Value="#C4B5FD"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding StatusKind}" Value="Transition">
+                                <Setter Property="Background" Value="#FFF7ED"/>
+                                <Setter Property="BorderBrush" Value="#FB923C"/>
+                                <Setter Property="BorderThickness" Value="2"/>
+                            </DataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding HasRoomSharedWarning}" Value="True"/>
+                                    <Condition Binding="{Binding HasConflict}" Value="False"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Background" Value="#FFFBEB"/>
+                                <Setter Property="BorderBrush" Value="#F59E0B"/>
+                                <Setter Property="BorderThickness" Value="2"/>
+                                <Setter Property="ToolTip">
+                                    <Setter.Value>
+                                        <ToolTip MaxWidth="360">
+                                            <TextBlock Text="{Binding RoomSharedHint}" TextWrapping="Wrap"/>
+                                        </ToolTip>
+                                    </Setter.Value>
+                                </Setter>
+                            </MultiDataTrigger>
+                            <DataTrigger Binding="{Binding HasConflict}" Value="True">
+                                <Setter Property="Background" Value="#FEF2F2"/>
+                                <Setter Property="BorderBrush" Value="#DC2626"/>
+                                <Setter Property="BorderThickness" Value="2"/>
+                                <Setter Property="ToolTip">
+                                    <Setter.Value>
+                                        <ToolTip MaxWidth="360">
+                                            <StackPanel>
+                                                <TextBlock Text="Конфликт" FontWeight="SemiBold" Foreground="#B91C1C"/>
+                                                <TextBlock Text="{Binding ConflictHint}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                                <TextBlock Text="{Binding ToolTip}" TextWrapping="Wrap" Margin="0,6,0,0"
+                                                           Foreground="#64748B" FontSize="11"
+                                                           Visibility="{Binding ToolTip, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                            </StackPanel>
+                                        </ToolTip>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftClick"
+                                  Command="{Binding DataContext.SelectMonitorCellCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                  CommandParameter="{Binding}"/>
+                </Border.InputBindings>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" CornerRadius="4,0,0,4"
+                            Background="{Binding BuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"
+                            Visibility="{Binding HasLesson, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+                    <StackPanel Grid.Column="1" Margin="4,3,3,3">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel x:Name="contentPanel" Grid.Row="0" VerticalAlignment="Center">
+                                <TextBlock x:Name="primaryLine" Text="{Binding PrimaryLine}"
+                                           FontSize="12" FontWeight="SemiBold" LineHeight="14"
+                                           Foreground="{StaticResource TextBrush}"
+                                           TextWrapping="Wrap"/>
+                                <TextBlock x:Name="secondaryLine" Text="{Binding SecondaryLine}"
+                                           FontSize="11" LineHeight="13"
+                                           Foreground="{StaticResource MutedTextBrush}"
+                                           TextWrapping="Wrap" Margin="0,2,0,0"
+                                           Visibility="{Binding SecondaryLine, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                            </StackPanel>
+                            <TextBlock x:Name="statusLine" Grid.Row="1" Text="{Binding StatusLine}"
+                                       FontSize="10" FontWeight="SemiBold" LineHeight="13"
+                                       TextWrapping="Wrap" TextAlignment="Center"
+                                       HorizontalAlignment="Stretch" Margin="0,4,0,0"
+                                       Visibility="{Binding StatusLine, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding StatusKind}" Value="Pending">
+                    <Setter TargetName="statusLine" Property="Foreground" Value="#B91C1C"/>
+                    <Setter TargetName="secondaryLine" Property="Foreground" Value="#B91C1C"/>
+                    <Setter TargetName="secondaryLine" Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StatusKind}" Value="Replacement">
+                    <Setter TargetName="statusLine" Property="Foreground" Value="#15803D"/>
+                    <Setter TargetName="secondaryLine" Property="Foreground" Value="#15803D"/>
+                    <Setter TargetName="secondaryLine" Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StatusKind}" Value="Unavailability">
+                    <Setter TargetName="primaryLine" Property="Foreground" Value="#6D28D9"/>
+                    <Setter TargetName="secondaryLine" Property="Foreground" Value="#7C3AED"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasLesson}" Value="False">
+                    <Setter TargetName="primaryLine" Property="HorizontalAlignment" Value="Center"/>
+                    <Setter TargetName="primaryLine" Property="TextAlignment" Value="Center"/>
+                    <Setter TargetName="secondaryLine" Property="HorizontalAlignment" Value="Center"/>
+                    <Setter TargetName="secondaryLine" Property="TextAlignment" Value="Center"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StatusKind}" Value="Transition">
+                    <Setter TargetName="statusLine" Property="Foreground" Value="#C2410C"/>
+                    <Setter TargetName="statusLine" Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate x:Key="DispatcherMonitorRowTemplate">
+            <Grid Margin="0,0,0,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="148" MinWidth="148"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Background="#F1F5F9" BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="6" Padding="0" Margin="0,0,2,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="4" CornerRadius="6,0,0,6"
+                                Background="{Binding BuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"
+                                Visibility="{Binding BuildingColorHex, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                        <StackPanel Grid.Column="1" Margin="8,6,8,6" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="11"
+                                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="32"/>
+                            <TextBlock Text="{Binding SubLabel}" FontSize="9" Foreground="{StaticResource MutedTextBrush}"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding SubLabel, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <ItemsControl Grid.Column="1" ItemsSource="{Binding Cells}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DispatcherMonitorCellTemplate}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="DispatcherDayEditorSectionTemplate">
+            <StackPanel Margin="0,0,0,14">
+                <Border Background="#DBEAFE" BorderBrush="#93C5FD" BorderThickness="1"
+                        CornerRadius="8" Padding="10,8" Margin="0,0,0,8"
+                        Visibility="{Binding IsShiftHeader, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="13"
+                                   Foreground="#1E40AF" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding SubTitle}" FontSize="11" Foreground="#1E3A8A"
+                                   TextWrapping="Wrap" TextAlignment="Center" Margin="0,4,0,0"
+                                   Visibility="{Binding SubTitle, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Visibility="{Binding IsShiftHeader, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12"
+                                   Foreground="{StaticResource TextBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding SubTitle}" FontSize="11"
+                                   Foreground="{StaticResource MutedTextBrush}" Margin="10,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding SubTitle, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                    </StackPanel>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="148" MinWidth="148"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="#E2E8F0" CornerRadius="6" Padding="8,8" Margin="0,0,2,0">
+                            <TextBlock Text="Класс / урок →" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{StaticResource MutedTextBrush}"/>
+                        </Border>
+                        <ItemsControl Grid.Column="1" ItemsSource="{Binding Columns}"
+                                      ItemTemplate="{StaticResource DispatcherMonitorColumnHeaderTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Rows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <controls:DayEditorGridRowView/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="DispatcherMonitorSectionTemplate">
+            <StackPanel Margin="0,0,0,14">
+                <Border Background="#DBEAFE" BorderBrush="#93C5FD" BorderThickness="1"
+                        CornerRadius="8" Padding="10,8" Margin="0,0,0,8"
+                        Visibility="{Binding IsShiftHeader, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="13"
+                                   Foreground="#1E40AF" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding SubTitle}" FontSize="11" Foreground="#1E3A8A"
+                                   TextWrapping="Wrap" TextAlignment="Center" Margin="0,4,0,0"
+                                   Visibility="{Binding SubTitle, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Visibility="{Binding IsShiftHeader, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12"
+                                   Foreground="{StaticResource TextBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding SubTitle}" FontSize="11"
+                                   Foreground="{StaticResource MutedTextBrush}" Margin="10,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding SubTitle, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                    </StackPanel>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="148" MinWidth="148"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="#E2E8F0" CornerRadius="6" Padding="8,8" Margin="0,0,2,0">
+                            <TextBlock Text="Строка / урок →" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{StaticResource MutedTextBrush}"/>
+                        </Border>
+                        <ItemsControl Grid.Column="1" ItemsSource="{Binding Columns}"
+                                      ItemTemplate="{StaticResource DispatcherMonitorColumnHeaderTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DispatcherMonitorRowTemplate}"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.InputBindings>
+        <KeyBinding Key="Return" Command="{Binding AssignReplacementCommand}"/>
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}"/>
+        <KeyBinding Key="P" Modifiers="Ctrl" Command="{Binding ExportExcelCommand}"/>
+        <KeyBinding Key="C" Modifiers="Ctrl+Shift" Command="{Binding CopyImageCommand}"/>
+    </UserControl.InputBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource ModuleHeaderBarStyle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Диспетчерская" Style="{StaticResource ModulePageTitleStyle}"/>
+                        <Border Style="{StaticResource StatusBadgeDangerStyle}" Margin="12,0,0,0"
+                                Visibility="{Binding PendingReplacements, Converter={StaticResource PositiveToVisible}}">
+                            <TextBlock Foreground="{StaticResource DangerBrush}" FontSize="12" FontWeight="SemiBold">
+                                <Run Text="Без замены: "/>
+                                <Run Text="{Binding PendingReplacements, Mode=OneWay}"/>
+                            </TextBlock>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="Дата:" Style="{StaticResource FormFieldLabelStyle}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <DatePicker Style="{StaticResource SidePanelDatePickerStyle}" Width="150"
+                                    SelectedDate="{Binding SelectedDate}"/>
+                        <Border Margin="12,0,0,0" Padding="8,4" CornerRadius="8" BorderThickness="1"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                Background="{Binding NearestCalendarAccentBackground}"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding HasNearestCalendarEvent, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding NearestCalendarLabel}" FontSize="11"
+                                           Foreground="{Binding NearestCalendarAccentForeground}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding NearestCalendarValue}" FontSize="14" FontWeight="Bold"
+                                           Foreground="{Binding NearestCalendarAccentForeground}"
+                                           Margin="6,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding NearestCalendarHint}" FontSize="10"
+                                           Foreground="{StaticResource MutedTextBrush}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Margin="8,0,0,0" Padding="8,4" CornerRadius="8" BorderThickness="1"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                Background="{Binding PeriodGradeReminderAccentBackground}"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding HasPeriodGradeReminder, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding PeriodGradeReminderLabel}" FontSize="11"
+                                           Foreground="{Binding PeriodGradeReminderAccentForeground}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding PeriodGradeReminderValue}" FontSize="14" FontWeight="Bold"
+                                           Foreground="{Binding PeriodGradeReminderAccentForeground}"
+                                           Margin="6,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding PeriodGradeReminderHint}" FontSize="10"
+                                           Foreground="{StaticResource MutedTextBrush}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="{Binding DaySummaryText}" Margin="16,0,0,0" VerticalAlignment="Center"
+                                   FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
+                        <TextBlock Text="{Binding StatusMessage}" Margin="16,0,0,0" VerticalAlignment="Center"
+                                   FontSize="11" Foreground="{StaticResource PrimaryBrush}"
+                                   Visibility="{Binding StatusMessage, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                    </StackPanel>
+                </StackPanel>
+                <Border Grid.Column="1" Style="{StaticResource ToolbarButtonGroupStyle}" VerticalAlignment="Top">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource ToolbarGroupItemStyle}" Command="{Binding RefreshCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="↻" FontSize="16" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Обновить" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Border Style="{StaticResource ToolbarGroupSeparatorStyle}"/>
+                        <Button Style="{StaticResource ToolbarGroupItemStyle}" Command="{Binding ExportExcelCommand}">
+                            <TextBlock Text="Excel" VerticalAlignment="Center"/>
+                        </Button>
+                        <Border Style="{StaticResource ToolbarGroupSeparatorStyle}"/>
+                        <Button Style="{StaticResource ToolbarGroupItemStyle}" Command="{Binding CopyImageCommand}"
+                                  ToolTip="Картинка + текст в буфер — для чата и почты (Ctrl+Shift+C)">
+                            <TextBlock Text="В буфер" VerticalAlignment="Center"/>
+                        </Button>
+                        <Border Style="{StaticResource ToolbarGroupSeparatorStyle}"/>
+                        <Button Style="{StaticResource ToolbarGroupItemStyle}" Command="{Binding SaveImageCommand}"
+                                  ToolTip="Сохранить лист замен как PNG">
+                            <TextBlock Text="PNG" VerticalAlignment="Center"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="1" SelectedIndex="{Binding ActiveSection}"
+                    Style="{StaticResource ModuleTabControlStyle}" Margin="0,8,0,0"
+                    Visibility="{Binding IsSchoolDay, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+            <TabControl.Resources>
+                <Style TargetType="TabItem" BasedOn="{StaticResource ModuleTabItemStyle}"/>
+            </TabControl.Resources>
+
+            <TabItem ToolTip="Сетка по звонкам: 1 класс, начальная 2–4 и 2–11 — отдельные блоки; при двухсменке — по сменам. Цвет полоски — здание.">
+                <TabItem.Header>
+                    <TextBlock Text="Монитор"/>
+                </TabItem.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="188"/>
+                            </Grid.ColumnDefinitions>
+                            <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Disabled" VerticalAlignment="Top">
+                                <ItemsControl ItemsSource="{Binding StatItems}"
+                                              ItemTemplate="{StaticResource DispatcherStatChipTemplate}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top"
+                                        Margin="8,2,8,0">
+                                <TextBlock Text="Строки:" VerticalAlignment="Center" Margin="0,0,6,0"
+                                           Style="{StaticResource SidePanelInlineLabelStyle}" FontSize="11"/>
+                                <ListBox SelectedValue="{Binding MonitorMode}" SelectedValuePath="Tag"
+                                         BorderThickness="0" Background="Transparent" VerticalAlignment="Center">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource DispatcherModeTabItemStyle}"/>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBoxItem Content="Педагоги" Tag="Teachers"/>
+                                    <ListBoxItem Content="Классы" Tag="Classes"/>
+                                    <ListBoxItem Content="Кабинеты" Tag="Buildings"/>
+                                </ListBox>
+                            </StackPanel>
+                            <Border Grid.Column="2" Background="#FEF9C3" BorderBrush="#FACC15"
+                                    BorderThickness="1" CornerRadius="8" Padding="8,6" VerticalAlignment="Top">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="📌 Заметка" FontWeight="SemiBold" FontSize="11"
+                                               Margin="0,0,0,4"/>
+                                    <TextBox Grid.Row="1" Text="{Binding DayNoteText, UpdateSourceTrigger=PropertyChanged}"
+                                             AcceptsReturn="True" TextWrapping="Wrap" Height="44"
+                                             VerticalScrollBarVisibility="Auto" Padding="6,4" FontSize="11"
+                                             ToolTip="{Binding DayNoteHint}"
+                                             LostFocus="DayNoteBox_LostFocus"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                        <Border Grid.Row="1" Margin="0,4,0,0" Padding="8,4" CornerRadius="6"
+                                Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1"
+                                Visibility="{Binding HasPendingReplacementDetails, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding PendingReplacementLines}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock FontSize="10" Foreground="#991B1B" Margin="0,0,12,0"
+                                                       Text="{Binding StringFormat='• {0}'}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+
+                    <Border Grid.Row="1" Background="#FAFBFC" BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="10" ClipToBounds="True" MinHeight="200">
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="4">
+                            <ItemsControl ItemsSource="{Binding MonitorSections}"
+                                          ItemTemplate="{StaticResource DispatcherMonitorSectionTemplate}"/>
+                        </ScrollViewer>
+                    </Border>
+
+                    <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Disabled" Margin="0,4,0,0">
+                        <StackPanel Orientation="Horizontal">
+                        <Border Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                CornerRadius="6" Padding="6,3" Margin="0,0,6,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="4" Height="12" Background="#94A3B8" Margin="0,0,5,0"/>
+                                <TextBlock Text="полоска — здание" FontSize="9"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1"
+                                CornerRadius="6" Padding="6,3" Margin="0,0,6,0">
+                            <TextBlock Text="🤒/📋 нужна замена · → заменяющий" FontSize="9" Foreground="#991B1B"/>
+                        </Border>
+                        <Border Background="#F0FDF4" BorderBrush="#BBF7D0" BorderThickness="1"
+                                CornerRadius="6" Padding="6,3" Margin="0,0,6,0">
+                            <TextBlock Text="замена назначена" FontSize="9" Foreground="#15803D"/>
+                        </Border>
+                        <Border Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1"
+                                CornerRadius="6" Padding="6,3" Margin="0,0,6,0">
+                            <TextBlock Text="окно" FontSize="9" Foreground="#64748B"/>
+                        </Border>
+                        <Border Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1"
+                                CornerRadius="6" Padding="6,3" Margin="0,0,6,0">
+                            <TextBlock Text="перемена" FontSize="9" Foreground="#92400E"/>
+                        </Border>
+                        <Border Background="#DCFCE7" BorderBrush="#BBF7D0" BorderThickness="1"
+                                CornerRadius="6" Padding="6,3" Margin="0,0,6,0">
+                            <TextBlock Text="дин. пауза" FontSize="9" Foreground="#166534"/>
+                        </Border>
+                        <Border Background="White" BorderBrush="#F97316" BorderThickness="2"
+                                CornerRadius="6" Padding="6,3">
+                            <TextBlock Text="оранжевая рамка — сейчас" FontSize="9" Foreground="#C2410C"/>
+                        </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Замены" ToolTip="Подбор замен и расписание учителя">
+                <views:DispatcherReplacementsView/>
+            </TabItem>
+
+            <TabItem Header="Конструктор дня" ToolTip="Перестановки, звонки, кабинеты на дату">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MinWidth="420"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="400" MinWidth="340" MaxWidth="460"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Background="#FAFBFC" BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="10" ClipToBounds="True">
+                        <DockPanel LastChildFill="True">
+                            <Border DockPanel.Dock="Top" Padding="12,10" Background="#F1F5F9"
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                <StackPanel>
+                                    <TextBlock Text="Расписание на выбранную дату" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding DayEditorGridHint}" FontSize="11"
+                                               Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,4" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding DayEditorSelectionHint}" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{StaticResource PrimaryBrush}" Margin="0,0,0,8" TextWrapping="Wrap"
+                                               Visibility="{Binding DayEditorSelectionHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                    <Border Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1"
+                                            CornerRadius="6" Padding="8,6" Margin="0,0,8,0"
+                                            Visibility="{Binding HasDayShiftWarning, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                        <StackPanel>
+                                            <TextBlock Foreground="#92400E" FontWeight="SemiBold" FontSize="10">
+                                                <Run Text="⚠ "/>
+                                                <Run Text="{Binding DayShiftSummary}"/>
+                                            </TextBlock>
+                                            <ItemsControl ItemsSource="{Binding DayShiftMessages}" Margin="0,4,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding}" FontSize="10" Foreground="#78350F"
+                                                                   TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                    <WrapPanel>
+                                        <TextBlock Text="Показать:" VerticalAlignment="Center" Margin="0,0,8,4"
+                                                   Style="{StaticResource SidePanelInlineLabelStyle}"/>
+                                        <ListBox SelectedValue="{Binding DayEditorScope}" SelectedValuePath="Tag"
+                                                 BorderThickness="0" Background="Transparent" Margin="0,0,0,4">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal"/>
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
+                                            <ListBox.ItemContainerStyle>
+                                                <Style TargetType="ListBoxItem" BasedOn="{StaticResource DispatcherModeTabItemStyle}"/>
+                                            </ListBox.ItemContainerStyle>
+                                            <ListBoxItem Content="Все классы" Tag="All"/>
+                                            <ListBoxItem Content="Класс" Tag="Class"/>
+                                            <ListBoxItem Content="Здание" Tag="Building"/>
+                                        </ListBox>
+                                    </WrapPanel>
+                                    <ComboBox ItemsSource="{Binding Classes}" DisplayMemberPath="DisplayName"
+                                              SelectedItem="{Binding DayEditorClass}" Width="160" HorizontalAlignment="Left"
+                                              Margin="0,4,0,0"
+                                              Visibility="{Binding IsDayEditorClassScope, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+                                    <ComboBox ItemsSource="{Binding BuildingNames}"
+                                              SelectedItem="{Binding DayEditorBuildingName}" Width="200"
+                                              HorizontalAlignment="Left" Margin="0,4,0,0"
+                                              Visibility="{Binding IsDayEditorBuildingScope, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+                                </StackPanel>
+                            </Border>
+                            <ScrollViewer x:Name="DayEditorScroll" HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Auto" Padding="6"
+                                          PreviewMouseDown="DayEditorScroll_PreviewMouseDown">
+                                <ItemsControl ItemsSource="{Binding DayEditorSections}"
+                                              ItemTemplate="{StaticResource DispatcherDayEditorSectionTemplate}"/>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+
+                    <GridSplitter Grid.Column="1" Style="{StaticResource VerticalGridSplitterStyle}"/>
+
+                    <controls:ScrollableTabContent Grid.Column="2">
+                        <StackPanel>
+                            <Border Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,10">
+                                <TextBlock Text="{Binding ModuleHint}" Style="{StaticResource SidePanelHelpTextStyle}" Margin="0"/>
+                            </Border>
+
+                            <Border Style="{StaticResource TeacherCardSectionStyle}">
+                                <StackPanel>
+                                    <ContentControl Content="Урок на день"
+                                                    ContentTemplate="{StaticResource TeacherCardSectionHeaderTemplate}"/>
+                                    <Border Style="{StaticResource DayEditorSelectionCardStyle}"
+                                            Visibility="{Binding HasSelectedLesson, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding SelectedLessonTitle}" FontWeight="SemiBold" FontSize="12"/>
+                                            <TextBlock Text="{Binding SelectedLessonDetail}" FontSize="11"
+                                                       Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
+                                                       Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Text="{Binding SelectedLessonTitle}" FontSize="12"
+                                               Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,10"
+                                               Visibility="{Binding HasSelectedLesson, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}"/>
+
+                                    <Button Style="{StaticResource SidePanelStretchButtonStyle}"
+                                            Command="{Binding CancelSelectedLessonCommand}"
+                                            Content="Отменить этот урок"
+                                            Margin="0,0,0,10"
+                                            Visibility="{Binding CanCancelSelectedLesson, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+
+                                    <Border Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1"
+                                            CornerRadius="8" Padding="8,6" Margin="0,0,0,10"
+                                            Visibility="{Binding HasDayShiftWarning, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                        <StackPanel>
+                                            <TextBlock Foreground="#92400E" FontWeight="SemiBold" FontSize="10">
+                                                <Run Text="⚠ "/>
+                                                <Run Text="{Binding DayShiftSummary}"/>
+                                            </TextBlock>
+                                            <ItemsControl ItemsSource="{Binding DayShiftMessages}" Margin="0,4,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding}" FontSize="10" Foreground="#78350F"
+                                                                   TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1"
+                                            CornerRadius="8" Padding="8,6" Margin="0,0,0,10"
+                                            Visibility="{Binding HasDayTransitionWarning, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                        <StackPanel>
+                                            <TextBlock Foreground="#92400E" FontWeight="SemiBold" FontSize="10">
+                                                <Run Text="↔ "/>
+                                                <Run Text="{Binding DayTransitionSummary}"/>
+                                            </TextBlock>
+                                            <ItemsControl ItemsSource="{Binding DayTransitionMessages}" Margin="0,4,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding}" FontSize="10" Foreground="#78350F"
+                                                                   TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="Учитель" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <ComboBox ItemsSource="{Binding Teachers}" DisplayMemberPath="FullName"
+                                              SelectedItem="{Binding EditDayTeacher}" Style="{StaticResource SidePanelComboStyle}"/>
+                                    <TextBlock Text="Здание" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <ComboBox ItemsSource="{Binding BuildingNames}"
+                                              SelectedItem="{Binding EditDayBuildingFilter}" Style="{StaticResource SidePanelComboStyle}"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="Кабинет" Style="{StaticResource FormFieldLabelStyle}" Margin="0"/>
+                                        <TextBlock Text="необязательно" FontSize="10" Foreground="#94A3B8"
+                                                   Margin="6,0,0,4" VerticalAlignment="Bottom"
+                                                   Visibility="{Binding IsDayRoomRequired, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}"/>
+                                    </StackPanel>
+                                    <ComboBox ItemsSource="{Binding FilteredDayRooms}"
+                                              SelectedItem="{Binding EditDayRoom}" Style="{StaticResource SidePanelComboStyle}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock>
+                                                    <Run Text="каб. "/>
+                                                    <Run Text="{Binding Number, Mode=OneWay}"/>
+                                                    <Run Text=" · "/>
+                                                    <Run Text="{Binding BuildingName, Mode=OneWay}"/>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button Style="{StaticResource SidePanelStretchButtonStyle}"
+                                            Command="{Binding ApplyDaySlotEditCommand}"
+                                            Content="Применить на этот день" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource TeacherCardSectionStyle}">
+                                <StackPanel>
+                                    <ContentControl Content="Сокращение на день"
+                                                    ContentTemplate="{StaticResource TeacherCardSectionHeaderTemplate}"/>
+                                    <TextBlock Text="{Binding DayChangesHint}" Style="{StaticResource DayEditorHintTextStyle}"/>
+                                    <TextBlock Text="{Binding ShortenedDayStatus}" Style="{StaticResource DayEditorActiveStatusStyle}"
+                                               Visibility="{Binding IsShortenedDayActive, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+
+                                    <StackPanel Grid.IsSharedSizeScope="True">
+                                    <Border Style="{StaticResource DayEditorSubsectionStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Сократить на" Style="{StaticResource DayEditorSubsectionTitleStyle}"/>
+                                            <controls:DayEditorStepperRow Label="Уроки −"
+                                                Value="{Binding TrimLessonMinutes}"
+                                                DecreaseCommand="{Binding DecreaseTrimLessonMinutesCommand}"
+                                                IncreaseCommand="{Binding IncreaseTrimLessonMinutesCommand}"
+                                                ApplyCommand="{Binding ApplyShortLessonsCommand}"
+                                                DecreaseToolTip="Меньше на 1 мин" IncreaseToolTip="Больше на 1 мин"/>
+                                            <controls:DayEditorStepperRow Label="Перемены −"
+                                                Value="{Binding TrimBreakMinutes}"
+                                                DecreaseCommand="{Binding DecreaseTrimBreakMinutesCommand}"
+                                                IncreaseCommand="{Binding IncreaseTrimBreakMinutesCommand}"
+                                                ApplyCommand="{Binding ApplyShortBreaksCommand}"
+                                                DecreaseToolTip="Меньше на 1 мин" IncreaseToolTip="Больше на 1 мин"/>
+                                            <controls:DayEditorStepperRow Label="Не более" Unit="уроков"
+                                                Value="{Binding MaxLessonsForDay}"
+                                                DecreaseCommand="{Binding DecreaseMaxLessonsForDayCommand}"
+                                                IncreaseCommand="{Binding IncreaseMaxLessonsForDayCommand}"
+                                                ApplyCommand="{Binding ApplyMaxLessonsCommand}"
+                                                DecreaseToolTip="Меньше на 1 урок" IncreaseToolTip="Больше на 1 урок"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource DayEditorSubsectionStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Задать длительность" Style="{StaticResource DayEditorSubsectionTitleStyle}"/>
+                                            <TextBlock Text="{Binding FixedDurationHint}" Style="{StaticResource DayEditorHintTextStyle}" Margin="0,0,0,6"/>
+                                            <controls:DayEditorStepperRow Label="Уроки по"
+                                                Value="{Binding FixedLessonMinutes}"
+                                                DecreaseCommand="{Binding DecreaseFixedLessonMinutesCommand}"
+                                                IncreaseCommand="{Binding IncreaseFixedLessonMinutesCommand}"
+                                                ApplyCommand="{Binding ApplyFixedLessonsCommand}"
+                                                DecreaseToolTip="Меньше на 1 мин" IncreaseToolTip="Больше на 1 мин"/>
+                                            <controls:DayEditorStepperRow Label="Перемены по"
+                                                Value="{Binding FixedBreakMinutes}"
+                                                DecreaseCommand="{Binding DecreaseFixedBreakMinutesCommand}"
+                                                IncreaseCommand="{Binding IncreaseFixedBreakMinutesCommand}"
+                                                ApplyCommand="{Binding ApplyFixedBreaksCommand}"
+                                                DecreaseToolTip="Меньше на 1 мин" IncreaseToolTip="Больше на 1 мин"/>
+                                        </StackPanel>
+                                    </Border>
+                                    </StackPanel>
+
+                                    <Border Style="{StaticResource DayEditorSubsectionStyle}" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock Text="Дин. пауза" Style="{StaticResource DayEditorSubsectionTitleStyle}"/>
+                                            <TextBlock Text="На сокращённый день обычно убирают прогулку между уроками начальной школы."
+                                                       Style="{StaticResource DayEditorHintTextStyle}" Margin="0,0,0,8"/>
+                                            <Button Style="{StaticResource SidePanelStretchButtonStyle}"
+                                                    Command="{Binding ApplySkipDynamicPauseCommand}"
+                                                    Content="Убрать дин. паузу"
+                                                    Margin="0"
+                                                    IsEnabled="{Binding CanSkipDynamicPause}"/>
+                                            <TextBlock Text="✓ дин. пауза убрана" Style="{StaticResource DayEditorActiveStatusStyle}"
+                                                       Margin="0,8,0,0"
+                                                       Visibility="{Binding IsDynamicPauseSkipped, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="Или шаблон звонков целиком" Style="{StaticResource DayEditorSubsectionTitleStyle}"/>
+                                    <TextBlock Text="{Binding BellsHint}" Style="{StaticResource DayEditorHintTextStyle}"/>
+                                    <ComboBox ItemsSource="{Binding BellTemplateNames}"
+                                              Text="{Binding SelectedBellTemplate, UpdateSourceTrigger=PropertyChanged}"
+                                              IsEditable="True" Style="{StaticResource SidePanelComboStyle}"/>
+                                    <Button Style="{StaticResource SidePanelStretchButtonStyle}"
+                                            Command="{Binding ShortenedDayCommand}"
+                                            Content="Применить шаблон"/>
+                                    <Button Style="{StaticResource SidePanelStretchButtonStyle}"
+                                            Command="{Binding OpenBellsDirectoryCommand}"
+                                            Content="Настроить звонки…"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource TeacherCardSectionStyle}">
+                                <StackPanel>
+                                    <ContentControl Content="Перестановки и отмена"
+                                                    ContentTemplate="{StaticResource TeacherCardSectionHeaderTemplate}"/>
+                                    <TextBlock Text="Поменять с" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <ComboBox ItemsSource="{Binding SwapLessonOptions}" DisplayMemberPath="SwapDisplayLine"
+                                              SelectedItem="{Binding SelectedSwapLesson}" Style="{StaticResource SidePanelComboStyle}"/>
+                                    <Button Style="{StaticResource SidePanelStretchButtonStyle}"
+                                            Command="{Binding SwapLessonsCommand}"
+                                            Content="Поменять местами"/>
+
+                                    <TextBlock Text="Перенести на урок №" Style="{StaticResource FormFieldLabelStyle}" Margin="0,4,0,4"/>
+                                    <Grid Style="{StaticResource DayEditorActionRowGridStyle}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" Text="{Binding MoveToLessonNumber}"
+                                                 Style="{StaticResource DayEditorInlineNumberBoxStyle}" Margin="0,0,8,0"/>
+                                        <Button Grid.Column="1" Style="{StaticResource SidePanelStretchButtonStyle}"
+                                                Command="{Binding MoveLessonCommand}" Content="Перенести" Margin="0"/>
+                                    </Grid>
+
+                                    <TextBlock Text="Отмена у класса" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <TextBlock Text="Или выберите урок в сетке и нажмите «Отменить этот урок»."
+                                               Style="{StaticResource DayEditorHintTextStyle}" Margin="0,0,0,6"/>
+                                    <Grid Style="{StaticResource DayEditorActionRowGridStyle}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox Grid.Column="0" ItemsSource="{Binding Classes}" DisplayMemberPath="DisplayName"
+                                                  SelectedItem="{Binding SelectedClass}" Margin="0,0,8,0"/>
+                                        <TextBox Grid.Column="1" Text="{Binding CancelLessonsCount}"
+                                                 Style="{StaticResource DayEditorInlineNumberBoxStyle}" Margin="0,0,8,0"/>
+                                        <TextBlock Grid.Column="2" Text="посл." VerticalAlignment="Center"
+                                                   Style="{StaticResource SidePanelInlineLabelStyle}"/>
+                                    </Grid>
+                                    <Button Style="{StaticResource SidePanelStretchButtonStyle}"
+                                            Command="{Binding CancelLastLessonsCommand}"
+                                            Content="Отменить последние уроки"/>
+
+                                    <TextBlock Text="История правок" Style="{StaticResource FormFieldLabelStyle}" Margin="0,8,0,4"/>
+                                    <TextBlock Text="{Binding LastDayChangeHint}" Style="{StaticResource DayEditorHintTextStyle}" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding DayResetHint}" Style="{StaticResource DayEditorHintTextStyle}"/>
+                                    <Border Style="{StaticResource ToolbarButtonGroupStyle}" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                                    Command="{Binding UndoLastDayChangeCommand}"
+                                                    Content="↩ Отменить последнее"/>
+                                            <Border Style="{StaticResource ToolbarGroupSeparatorHorizontalStyle}"/>
+                                            <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                                    Command="{Binding ResetDayChangesCommand}"
+                                                    Content="⟲ Сбросить день"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <ItemsControl ItemsSource="{Binding DayOverrides}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,0,4">
+                                                    <TextBlock Text="{Binding DisplayLine}" FontSize="10"
+                                                               Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </controls:ScrollableTabContent>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" Background="#F0F9FF" BorderBrush="#BAE6FD" BorderThickness="1"
+                CornerRadius="8" Padding="8,6" Margin="0,10,0,0">
+            <TextBlock Text="{Binding FooterHint}" FontSize="10" Foreground="#0369A1" TextWrapping="Wrap" LineHeight="14"/>
+        </Border>
+
+        <Border Grid.Row="1" Background="#FAFBFC" Margin="0,8,0,0"
+                Visibility="{Binding IsSchoolDay, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="Уроков в этот день нет" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding DayStatusText}" FontSize="12" Foreground="{StaticResource MutedTextBrush}"
+                           HorizontalAlignment="Center" Margin="0,8,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,78 @@
+{
+  "name": "3 класс",
+  "gradeFrom": 3,
+  "gradeTo": 3,
+  "isBuiltIn": true,
+  "items": [
+    {
+      "subjectName": "Изобразительное искусство",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 3.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Иностранный язык",
+      "hoursPerWeek": 2.0,
+      "difficultyScore": 7.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Литературное чтение",
+      "hoursPerWeek": 4.0,
+      "difficultyScore": 5.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Математика",
+      "hoursPerWeek": 5.0,
+      "difficultyScore": 8.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Музыка",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 3.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Окружающий мир",
+      "hoursPerWeek": 2.0,
+      "difficultyScore": 6.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Разговоры о важном",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 0.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Русский язык",
+      "hoursPerWeek": 5.0,
+      "difficultyScore": 7.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Технология",
+      "hoursPerWeek": 1.0,
+      "difficultyScore": 2.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    },
+    {
+      "subjectName": "Физическая культура",
+      "hoursPerWeek": 2.0,
+      "difficultyScore": 1.0,
+      "hasSubgroups": false,
+      "weekParity": "EveryWeek"
+    }
+  ]
+}

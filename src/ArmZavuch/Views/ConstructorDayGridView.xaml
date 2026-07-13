@@ -1,0 +1,15 @@
+<UserControl x:Class="ArmZavuch.Views.ConstructorDayGridView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ArmZavuch.Views.Converters"
+             xmlns:views="clr-namespace:ArmZavuch.Views">
+    <Border Background="#FAFBFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="4">
+        <StackPanel>
+            <TextBlock Text="Сетка пуста — добавьте классы в справочниках и обновите конструктор."
+                       FontSize="11" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
+                       Margin="8" HorizontalAlignment="Center"
+                       Visibility="{Binding HasDayGridSections, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}"/>
+            <views:ConstructorDayGridSectionsView Sections="{Binding DayGridSections}" ViewModel="{Binding}"/>
+        </StackPanel>
+    </Border>
+</UserControl>

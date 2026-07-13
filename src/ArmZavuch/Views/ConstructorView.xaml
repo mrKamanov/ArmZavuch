@@ -1,0 +1,1810 @@
+<UserControl x:Class="ArmZavuch.Views.ConstructorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ArmZavuch.Views.Converters"
+             xmlns:helpers="clr-namespace:ArmZavuch.Views.Helpers"
+             xmlns:controls="clr-namespace:ArmZavuch.Views.Controls"
+             xmlns:views="clr-namespace:ArmZavuch.Views"
+             xmlns:models="clr-namespace:ArmZavuch.Models"
+             PreviewKeyDown="UserControl_PreviewKeyDown">
+    <UserControl.InputBindings>
+        <KeyBinding Key="Z" Modifiers="Ctrl" Command="{Binding UndoLastCommand}"/>
+        <KeyBinding Key="Escape" Command="{Binding ClearCheckboxSelectionCommand}"/>
+    </UserControl.InputBindings>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="360"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition MinWidth="0" MaxWidth="380"
+                              Width="{Binding IsGridFullscreen, Converter={x:Static conv:BoolToGridLengthConverter.Instance}, ConverterParameter=0|280}"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Row="0" Grid.ColumnSpan="3" Style="{StaticResource ModuleHeaderBarStyle}"
+                Visibility="{Binding IsGridFullscreen, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Конструктор" Style="{StaticResource ModulePageTitleStyle}"/>
+                    <TextBlock Text="{Binding HeaderHint}" VerticalAlignment="Center" Margin="14,0,0,0"
+                               Foreground="{StaticResource MutedTextBrush}" FontSize="12"/>
+                </StackPanel>
+                <Border Grid.Column="1" Style="{StaticResource ToolbarButtonGroupStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                Command="{Binding UndoLastCommand}"
+                                IsEnabled="{Binding CanUndo}"
+                                ToolTip="Отменить последнее действие (Ctrl+Z)">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="↩" FontSize="15" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Отменить" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Border Style="{StaticResource ToolbarGroupSeparatorStyle}"/>
+                        <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                Command="{Binding LoadCommand}"
+                                ToolTip="Перечитать шаблоны, классы и сетку из базы">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="↻" FontSize="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Обновить" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="1" Grid.Column="0" Margin="0,0,0,0"
+                    SelectedIndex="{Binding ActiveTabIndex}">
+            <TabControl.Style>
+                <Style TargetType="TabControl" BasedOn="{StaticResource ModuleTabControlStyle}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsGridFullscreen}" Value="True">
+                            <Setter Property="Padding" Value="0"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TabControl.Style>
+            <TabControl.Resources>
+                <Style TargetType="TabItem" BasedOn="{StaticResource ModuleTabItemStyle}"/>
+            </TabControl.Resources>
+
+            <TabItem Header="Сетка" ToolTip="Недельный шаблон: уроки по классам и дням">
+                <DockPanel Margin="12,8,12,0" LastChildFill="True">
+                    <Border DockPanel.Dock="Top" Style="{StaticResource CrudFormPanelStyle}" Padding="8,6" Margin="0,0,0,6"
+                            Visibility="{Binding IsGridFullscreen, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                        <WrapPanel VerticalAlignment="Center">
+                            <Button Content="Свернуть" Command="{Binding ToggleGridFullscreenCommand}"
+                                    Style="{StaticResource SmallButtonStyle}" Margin="0,0,12,0"/>
+                            <TextBlock Text="{Binding HeaderHint}" VerticalAlignment="Center" FontSize="11"
+                                       Foreground="{StaticResource MutedTextBrush}"/>
+                        </WrapPanel>
+                    </Border>
+                    <Border DockPanel.Dock="Top" Style="{StaticResource CrudFormPanelStyle}" Padding="10,8" Margin="0,0,0,6"
+                            Visibility="{Binding IsGridFullscreen, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}">
+                        <StackPanel>
+                            <WrapPanel VerticalAlignment="Center">
+                                <Border Style="{StaticResource ToolbarButtonGroupStyle}" Margin="0,0,8,4"
+                                        ToolTip="Шаблон недели — полное расписание на одну неделю (А/Б или каждую неделю)">
+                                    <ListBox ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}"
+                                             BorderThickness="0" Background="Transparent">
+                                        <ListBox.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ListBox.ItemsPanel>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" ToolTip="{Binding TabHint}"/>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="10,5"/>
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Setter Property="FontSize" Value="12"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                            <Border x:Name="bd" Background="Transparent"
+                                                                    CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                                                    <Setter Property="Foreground" Value="White"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="bd" Property="Background" Value="#EFF6FF"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                    </ListBox>
+                                </Border>
+                                <Button Style="{StaticResource ToolbarGroupItemStyle}" Margin="0,0,4,4"
+                                        Command="{Binding CreateTemplateCommand}"
+                                        ToolTip="Создать пустой шаблон — название «Неделя А», «Б», «В»…">
+                                    <TextBlock Text="＋" FontSize="14"/>
+                                </Button>
+                                <Button Style="{StaticResource ToolbarGroupItemStyle}" Margin="0,0,4,4"
+                                        Command="{Binding CopyTemplateCommand}"
+                                        ToolTip="Копия шаблона — предложит следующую букву (А→Б→В…)">
+                                    <TextBlock Text="⎘" FontSize="14"/>
+                                </Button>
+                                <Button Style="{StaticResource ToolbarGroupItemStyle}" Margin="0,0,10,4"
+                                        Command="{Binding DeleteTemplateCommand}" ToolTip="Удалить шаблон">
+                                    <TextBlock Text="🗑" FontSize="13" Foreground="{StaticResource DangerBrush}"/>
+                                </Button>
+
+                                <ComboBox SelectedValue="{Binding GridViewMode, UpdateSourceTrigger=PropertyChanged}"
+                                          SelectedValuePath="Tag" MinWidth="168" FontSize="11" Margin="0,0,8,4"
+                                          ToolTip="{Binding GridViewModeHint}">
+                                    <ComboBoxItem Content="Все классы · день" Tag="AllClassesDay"/>
+                                    <ComboBoxItem Content="Все классы · неделя" Tag="AllClassesWeek"/>
+                                    <ComboBoxItem Content="Один класс · неделя" Tag="SingleClassWeek"/>
+                                </ComboBox>
+
+                                <Border Style="{StaticResource ToolbarButtonGroupStyle}" Margin="0,0,8,4"
+                                        Visibility="{Binding IsAllClassesDayMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"
+                                        ToolTip="День недели в сетке">
+                                    <ListBox ItemsSource="{Binding DayNames}" SelectedIndex="{Binding SelectedDayIndex}"
+                                             BorderThickness="0" Background="Transparent">
+                                        <ListBox.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ListBox.ItemsPanel>
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="8,4"/>
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Setter Property="FontSize" Value="12"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                            <Border x:Name="bd" Background="Transparent"
+                                                                    CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                                                    <Setter Property="Foreground" Value="White"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="bd" Property="Background" Value="#EFF6FF"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                    </ListBox>
+                                </Border>
+
+                                <ComboBox ItemsSource="{Binding ClassList}" SelectedItem="{Binding FocusClass}"
+                                          MinWidth="72" FontSize="11" Margin="0,0,8,4"
+                                          Visibility="{Binding IsSingleClassWeekMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"
+                                          ToolTip="Класс для недельного режима">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayName}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <ComboBox ItemsSource="{Binding RoomList}" SelectedItem="{Binding FocusClassDefaultRoom}"
+                                          MinWidth="120" FontSize="11" Margin="0,0,8,4"
+                                          Visibility="{Binding IsSingleClassWeekMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"
+                                          ToolTip="Кабинет по умолчанию для новых ячеек этого класса">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Border Style="{StaticResource BuildingListColorChipStyle}"
+                                                        Background="{Binding BuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                <TextBlock VerticalAlignment="Center">
+                                                    <Run Text="{Binding Number}"/>
+                                                    <Run Text=" · "/>
+                                                    <Run Text="{Binding BuildingName}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <ComboBox ItemsSource="{Binding RoomList}" SelectedItem="{Binding FocusClassDefaultPeRoom}"
+                                          MinWidth="120" FontSize="11" Margin="0,0,8,4"
+                                          Visibility="{Binding IsSingleClassWeekMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"
+                                          ToolTip="Зал или кабинет для физкультуры (если в другом здании)">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Border Style="{StaticResource BuildingListColorChipStyle}"
+                                                        Background="{Binding BuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                <TextBlock VerticalAlignment="Center">
+                                                    <Run Text="{Binding Number}"/>
+                                                    <Run Text=" · "/>
+                                                    <Run Text="{Binding BuildingName}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <ListBox SelectedValue="{Binding WorkflowStep}" SelectedValuePath="Tag"
+                                         BorderThickness="0" Background="Transparent" Margin="0,0,8,4">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Padding" Value="10,5"/>
+                                            <Setter Property="Margin" Value="0,0,4,0"/>
+                                            <Setter Property="Cursor" Value="Hand"/>
+                                            <Setter Property="FontSize" Value="11"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border x:Name="bd" Background="#F1F5F9" CornerRadius="6"
+                                                                Padding="{TemplateBinding Padding}"
+                                                                BorderBrush="#CBD5E1" BorderThickness="1">
+                                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                                                <Setter Property="Foreground" Value="White"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBoxItem Content="1 · Педагоги" Tag="Teachers"/>
+                                    <ListBoxItem Content="2 · Предметы" Tag="Subjects"/>
+                                    <ListBoxItem Content="3 · Кабинеты" Tag="Rooms"/>
+                                </ListBox>
+
+                                <Button Content="{Binding FullscreenToggleLabel}"
+                                        Command="{Binding ToggleGridFullscreenCommand}"
+                                        Style="{StaticResource SmallButtonStyle}" Margin="0,0,4,4"/>
+                                <Button Content="Очистить расписание" Command="{Binding ClearScheduleCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,4,4"
+                                        ToolTip="Снять все уроки: один класс / один день / вся неделя — по текущему режиму сетки"/>
+                                <Button Content="Сброс масштаба" Command="{Binding ResetGridZoomCommand}"
+                                        Style="{StaticResource SmallButtonStyle}" Margin="0,0,0,4"
+                                        ToolTip="Ctrl + колёсико — масштаб сетки"/>
+                            </WrapPanel>
+
+                            <TextBlock Text="{Binding WorkflowStepHint}" FontSize="10"
+                                       Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+
+                            <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1"
+                                    CornerRadius="6" Padding="8,4" Margin="0,4,0,0"
+                                    Visibility="{Binding IsDragHintActive, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                <StackPanel>
+                                    <TextBlock Text="Подсказки при перетаскивании" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <WrapPanel>
+                                        <Border Background="#DCFCE7" BorderBrush="#16A34A" BorderThickness="1"
+                                                CornerRadius="3" Padding="6,2" Margin="0,0,6,4">
+                                            <TextBlock Text="🟢 удобно" FontSize="10"/>
+                                        </Border>
+                                        <Border Background="#FEF9C3" BorderBrush="#CA8A04" BorderThickness="1"
+                                                CornerRadius="3" Padding="6,2" Margin="0,0,6,4">
+                                            <TextBlock Text="🟡 нежелательно" FontSize="10"/>
+                                        </Border>
+                                        <Border Background="#FEE2E2" BorderBrush="#DC2626" BorderThickness="1"
+                                                CornerRadius="3" Padding="6,2" Margin="0,0,6,4">
+                                            <TextBlock Text="🔴 невозможно" FontSize="10"/>
+                                        </Border>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <WrapPanel Margin="0,4,0,0"
+                                       Visibility="{Binding IsSubjectsWorkflow, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                <TextBlock Text="Сивков:" FontSize="10" FontWeight="SemiBold"
+                                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <ComboBox ItemsSource="{Binding ClassList}" SelectedItem="{Binding WorkloadChartClass}"
+                                          MinWidth="72" FontSize="11" Margin="0,0,6,0">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayName}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button x:Name="WorkloadChartExpandButton"
+                                        Content="{Binding WorkloadChartExpandLabel}"
+                                        Command="{Binding ToggleWorkloadChartPopupCommand}"
+                                        Style="{StaticResource SmallButtonStyle}" Margin="0,0,8,0"
+                                        IsEnabled="{Binding HasWorkloadChartClass}"/>
+                                <TextBlock FontSize="10" FontWeight="SemiBold" Foreground="#1E40AF" VerticalAlignment="Center">
+                                    <Run Text="Неделя:"/>
+                                    <Run Text="{Binding WorkloadChartWeekTotal, StringFormat={}{0:0.##}, Mode=OneWay}"/>
+                                </TextBlock>
+                            </WrapPanel>
+
+                            <Border Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1"
+                                    CornerRadius="6" Padding="8,4" Margin="0,6,0,0"
+                                    Visibility="{Binding HasDayConflicts, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                <TextBlock Text="{Binding DayConflictSummary}" Foreground="#B91C1C"
+                                           FontWeight="SemiBold" FontSize="11" TextWrapping="Wrap"/>
+                            </Border>
+                            <Border Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1"
+                                    CornerRadius="6" Padding="8,4" Margin="0,4,0,0"
+                                    Visibility="{Binding HasDayRoomSharedWarnings, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                <TextBlock Text="{Binding DayRoomSharedSummary}" Foreground="#92400E"
+                                           FontWeight="SemiBold" FontSize="11" TextWrapping="Wrap"/>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <Popup PlacementTarget="{Binding ElementName=WorkloadChartExpandButton}"
+                           Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
+                           PopupAnimation="Fade"
+                           IsOpen="{Binding IsWorkloadChartPopupOpen, Mode=TwoWay}">
+                        <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1"
+                                CornerRadius="10" Padding="16" Margin="0,6,0,0">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.15" Color="#0F172A"/>
+                            </Border.Effect>
+                            <StackPanel MinWidth="640">
+                                <TextBlock Text="{Binding WorkloadChartCaption}" FontWeight="SemiBold"
+                                           FontSize="13" Margin="0,0,0,4"/>
+                                <TextBlock FontSize="14" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,10">
+                                    <Run Text="Итого за неделю:"/>
+                                    <Run Text="{Binding WorkloadChartWeekTotal, StringFormat={}{0:0.##}, Mode=OneWay}"/>
+                                </TextBlock>
+                                <controls:WeeklyLoadChartSurface Points="{Binding WeeklyLoadChartPointsLarge}"
+                                                                   PolylinePoints="{Binding WeeklyLoadPolylinePointsLarge}"
+                                                                   PlotWidth="620" PlotHeight="140" IsLarge="True"/>
+                                <Button Content="Закрыть" HorizontalAlignment="Right" Margin="0,12,0,0"
+                                        Command="{Binding ToggleWorkloadChartPopupCommand}"
+                                        Style="{StaticResource SmallButtonStyle}"/>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+
+                    <Grid MinHeight="200">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition MinWidth="0" MaxWidth="280"
+                                              Width="{Binding IsGridFullscreen, Converter={x:Static conv:BoolToGridLengthConverter.Instance}, ConverterParameter=220|180}"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Style="{StaticResource DirectorySidePanelStyle}" VerticalAlignment="Stretch">
+                            <DockPanel LastChildFill="True">
+                                <ListBox DockPanel.Dock="Top" Margin="0,0,0,8"
+                                         SelectedValue="{Binding WorkflowStep}" SelectedValuePath="Tag"
+                                         BorderThickness="0" Background="Transparent"
+                                         Visibility="{Binding IsGridFullscreen, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="3"/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Padding" Value="0"/>
+                                            <Setter Property="Margin" Value="0,0,4,0"/>
+                                            <Setter Property="Cursor" Value="Hand"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border x:Name="bd" Background="#F1F5F9" CornerRadius="6"
+                                                                Padding="6,5" BorderBrush="#CBD5E1" BorderThickness="1">
+                                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                                                <Setter Property="Foreground" Value="White"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBoxItem Tag="Teachers" ToolTip="Педагоги">
+                                        <TextBlock Text="👤" FontSize="15" HorizontalAlignment="Center"/>
+                                    </ListBoxItem>
+                                    <ListBoxItem Tag="Subjects" ToolTip="Предметы">
+                                        <TextBlock Text="📗" FontSize="15" HorizontalAlignment="Center"/>
+                                    </ListBoxItem>
+                                    <ListBoxItem Tag="Rooms" ToolTip="Кабинеты">
+                                        <TextBlock Text="🏫" FontSize="15" HorizontalAlignment="Center"/>
+                                    </ListBoxItem>
+                                </ListBox>
+                                <TextBlock DockPanel.Dock="Top" Text="Палитра" FontWeight="SemiBold" Margin="0,0,0,8"
+                                           Visibility="{Binding IsGridFullscreen, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}"/>
+                                <ComboBox DockPanel.Dock="Top" Margin="0,0,0,8" FontSize="11"
+                                          ItemsSource="{Binding SubjectPaletteClassFilters}"
+                                          SelectedItem="{Binding SubjectPaletteClassFilter}"
+                                          Visibility="{Binding ShowSubjectPaletteClassFilter, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"
+                                          ToolTip="Показать предметы выбранного класса или всех классов">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayName}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8"
+                                            Visibility="{Binding IsTeachersWorkflow, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                    <Grid Margin="0,0,0,6">
+                                        <TextBox Text="{Binding TeacherPaletteSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                 FontSize="11" Padding="6,4,24,4"
+                                                 ToolTip="Поиск педагога по ФИО"/>
+                                        <Button Width="20" Height="20" Padding="0" HorizontalAlignment="Right"
+                                                Margin="0,0,2,0" VerticalAlignment="Center"
+                                                Command="{Binding ClearTeacherPaletteSearchCommand}"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                ToolTip="Очистить поиск"
+                                                Visibility="{Binding TeacherPaletteSearchText, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}">
+                                            <TextBlock Text="✕" FontSize="10" Foreground="#64748B"/>
+                                        </Button>
+                                    </Grid>
+                                    <UniformGrid Columns="4" Margin="0,0,0,2">
+                                        <ToggleButton Margin="0,0,4,0" Padding="6,4"
+                                                      IsChecked="{Binding TeacherPaletteFilterPrimary}"
+                                                      ToolTip="Начальная школа">
+                                            <TextBlock Text="①" FontSize="13" HorizontalAlignment="Center"/>
+                                        </ToggleButton>
+                                        <ToggleButton Margin="0,0,4,0" Padding="6,4"
+                                                      IsChecked="{Binding TeacherPaletteFilterSubject}"
+                                                      ToolTip="Предметники">
+                                            <TextBlock Text="📗" FontSize="13" HorizontalAlignment="Center"/>
+                                        </ToggleButton>
+                                        <ToggleButton Margin="0,0,4,0" Padding="6,4"
+                                                      IsChecked="{Binding TeacherPaletteFilterAuxiliary}"
+                                                      ToolTip="Вспомогательный персонал">
+                                            <TextBlock Text="🛠" FontSize="13" HorizontalAlignment="Center"/>
+                                        </ToggleButton>
+                                        <ToggleButton Padding="6,4"
+                                                      IsChecked="{Binding TeacherPaletteFilterUnassigned}"
+                                                      ToolTip="Без основного предмета">
+                                            <TextBlock Text="？" FontSize="13" HorizontalAlignment="Center"/>
+                                        </ToggleButton>
+                                    </UniformGrid>
+                                    <TextBlock FontSize="10" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0"
+                                               TextWrapping="Wrap">
+                                        <Run Text="Выбран: "/>
+                                        <Run Text="{Binding SelectedPlacementTeacherCaption, Mode=OneWay}" FontWeight="SemiBold"/>
+                                    </TextBlock>
+                                    <WrapPanel Margin="0,6,0,0">
+                                        <Border Background="#DCFCE7" BorderBrush="#16A34A" BorderThickness="1"
+                                                CornerRadius="3" Padding="6,2" Margin="0,0,6,0">
+                                            <TextBlock Text="зелёный — разложен" FontSize="9"/>
+                                        </Border>
+                                    </WrapPanel>
+                                </StackPanel>
+                                <ListBox x:Name="TeacherPaletteList" ItemsSource="{Binding TeacherPaletteView}"
+                                         SelectedItem="{Binding SelectedPlacementTeacher, Mode=TwoWay}"
+                                         Style="{StaticResource ConstructorPaletteListStyle}"
+                                         MinHeight="100"
+                                         Visibility="{Binding IsTeachersWorkflow, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource TeacherPaletteListBoxItemStyle}">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.GroupStyle>
+                                        <GroupStyle>
+                                            <GroupStyle.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="0,10,0,4">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Border Grid.Column="0" Width="4" Height="18" CornerRadius="2" Margin="0,0,6,0"
+                                                                    Background="{Binding Name, Converter={x:Static conv:SubjectAccentHexConverter.Instance}}"/>
+                                                            <Border Grid.Column="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0"
+                                                                    BorderThickness="1"
+                                                                    BorderBrush="{Binding Name, Converter={x:Static conv:SubjectAccentHexConverter.Instance}}"
+                                                                    Background="{Binding Name, Converter={x:Static conv:SubjectAccentHexConverter.Instance}, ConverterParameter=Background}">
+                                                                <TextBlock Text="{Binding Name, Converter={x:Static conv:SubjectAccentHexConverter.Instance}, ConverterParameter=BadgeText}"
+                                                                           FontSize="9" FontWeight="Bold"
+                                                                           Foreground="{Binding Name, Converter={x:Static conv:SubjectAccentHexConverter.Instance}}"/>
+                                                            </Border>
+                                                            <TextBlock Grid.Column="2" Text="{Binding Name}" FontWeight="SemiBold" FontSize="10.5"
+                                                                       Foreground="{Binding Name, Converter={x:Static conv:SubjectAccentHexConverter.Instance}}"
+                                                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                        </Grid>
+                                                        <Border Height="2" CornerRadius="1" Margin="0,5,0,0" Opacity="0.45"
+                                                                Background="{Binding Name, Converter={x:Static conv:SubjectAccentHexConverter.Instance}}"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </GroupStyle.HeaderTemplate>
+                                        </GroupStyle>
+                                    </ListBox.GroupStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border MouseLeftButtonDown="TeacherPalette_MouseLeftButtonDown"
+                                                    MouseMove="TeacherPalette_MouseMove"
+                                                    MouseLeftButtonUp="TeacherPalette_MouseLeftButtonUp">
+                                                <Border.Style>
+                                                    <Style TargetType="Border" BasedOn="{StaticResource TeacherPaletteSelectableCardBorderStyle}">
+                                                        <Setter Property="BorderBrush" Value="{Binding CardBorderHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                        <Setter Property="Background" Value="{Binding CardBackgroundHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid Style="{StaticResource PaletteAccentCardContentStyle}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="5"/>
+                                                        <ColumnDefinition Width="*" MinWidth="0"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0"
+                                                            Background="{Binding CardBorderHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                    <Grid Grid.Column="1" Margin="10,8" MinWidth="0">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <Border Grid.Row="0" CornerRadius="4" Padding="5,1" HorizontalAlignment="Left" Margin="0,0,0,5"
+                                                                BorderThickness="1"
+                                                                BorderBrush="{Binding AccentBorderHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"
+                                                                Background="{Binding AccentBorderHex, Converter={x:Static conv:HexToLightBrushConverter.Instance}, ConverterParameter=0.18}">
+                                                            <TextBlock Text="{Binding SubjectBadgeText}" FontSize="9" FontWeight="Bold"
+                                                                       Foreground="{Binding AccentBorderHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                        </Border>
+                                                        <TextBlock Grid.Row="1" Text="{Binding PrimaryLine}"
+                                                                   FontWeight="SemiBold" FontSize="11.5" Foreground="#0F172A"
+                                                                   TextWrapping="Wrap" LineHeight="15" MaxHeight="32"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Row="2" Text="{Binding SecondaryLine}" FontSize="9.5"
+                                                                   Foreground="{StaticResource MutedTextBrush}" Margin="0,3,0,0"
+                                                                   TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                                                                   ToolTip="{Binding SecondaryLineToolTip}"
+                                                                   Visibility="{Binding SecondaryLine, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                                        <UniformGrid Grid.Row="3" Columns="2" Margin="0,8,0,0">
+                                                            <Border Style="{StaticResource TeacherPaletteMetricBadgeStyle}" Margin="0,0,3,0"
+                                                                    ToolTip="{Binding PlannedHoursToolTip}">
+                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                    <TextBlock Text="{Binding PlannedHoursText}" FontWeight="Bold" FontSize="11"
+                                                                               Foreground="{Binding PlannedHoursBrush, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                                    <TextBlock Text=" ч" FontSize="9" Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="0,0,0,1"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <Border Style="{StaticResource TeacherPaletteMetricBadgeStyle}" Margin="3,0,0,0"
+                                                                    ToolTip="Уроков в сетке шаблона">
+                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                    <TextBlock Text="{Binding ScheduledCountText}" FontWeight="Bold" FontSize="11"
+                                                                               Foreground="{Binding ScheduledCountBrush, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                                    <TextBlock Text=" в сетке" FontSize="9" Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="0,0,0,1"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </UniformGrid>
+                                                        <TextBlock Grid.Row="4" Text="{Binding PlacementSelectionMarker}" FontSize="9"
+                                                                   FontWeight="SemiBold" Foreground="#1D4ED8" Margin="0,4,0,0"
+                                                                   Visibility="{Binding PlacementSelectionMarker, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                                        <TextBlock Grid.Row="5" Text="{Binding PlacementStatusText}" FontSize="9"
+                                                                   FontWeight="SemiBold" Foreground="#15803D" Margin="0,6,0,0"
+                                                                   Visibility="{Binding PlacementStatusText, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <ListBox x:Name="SubjectPaletteList" ItemsSource="{Binding SubjectPaletteItems}"
+                                         Style="{StaticResource ConstructorPaletteListStyle}"
+                                         MinHeight="100"
+                                         Visibility="{Binding IsSubjectsWorkflow, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border MouseLeftButtonDown="Palette_MouseLeftButtonDown"
+                                                    MouseMove="SubjectPalette_MouseMove"
+                                                    MouseLeftButtonUp="Palette_MouseLeftButtonUp">
+                                                <Border.Style>
+                                                    <Style TargetType="Border" BasedOn="{StaticResource TeacherPaletteCardBorderStyle}">
+                                                        <Setter Property="BorderBrush" Value="{Binding AccentBorderHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                        <Setter Property="Background" Value="{Binding AccentBackgroundHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid Style="{StaticResource PaletteAccentCardContentStyle}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="5"/>
+                                                        <ColumnDefinition Width="*" MinWidth="0"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0"
+                                                            Background="{Binding AccentBorderHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                    <Grid Grid.Column="1" Margin="10,8" MinWidth="0">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <Border Grid.Row="0" CornerRadius="4" Padding="5,1" HorizontalAlignment="Left" Margin="0,0,0,5"
+                                                                BorderThickness="1"
+                                                                BorderBrush="{Binding AccentBorderHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"
+                                                                Background="{Binding AccentBorderHex, Converter={x:Static conv:HexToLightBrushConverter.Instance}, ConverterParameter=0.18}">
+                                                            <TextBlock Text="{Binding SubjectBadgeText}" FontSize="9" FontWeight="Bold"
+                                                                       Foreground="{Binding AccentBorderHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                        </Border>
+                                                        <TextBlock Grid.Row="1" Text="{Binding PrimaryLine}" FontWeight="SemiBold" FontSize="11.5"
+                                                                   Foreground="#0F172A" TextWrapping="Wrap" LineHeight="15" MaxHeight="32"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Row="2" Text="{Binding SecondaryLine}" FontSize="9.5"
+                                                                   Foreground="{StaticResource MutedTextBrush}" Margin="0,3,0,0"
+                                                                   TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <ScrollViewer x:Name="RoomPaletteScroll" VerticalScrollBarVisibility="Auto" MinHeight="100"
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              Visibility="{Binding IsRoomsWorkflow, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                    <ItemsControl ItemsSource="{Binding RoomPaletteGroups}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,2,0,4">
+                                                    <Expander.Header>
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <Border Width="4" Height="14" CornerRadius="2" Margin="0,0,6,0"
+                                                                    Background="{Binding BuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                            <TextBlock Text="{Binding HeaderText}" FontWeight="SemiBold" FontSize="10"/>
+                                                        </StackPanel>
+                                                    </Expander.Header>
+                                                    <ItemsControl ItemsSource="{Binding Rooms}" Margin="0,2,0,0">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1"
+                                                                        CornerRadius="4" Padding="8,6" Margin="0,2" Cursor="Hand"
+                                                                        MouseLeftButtonDown="Palette_MouseLeftButtonDown"
+                                                                        MouseMove="RoomPalette_MouseMove"
+                                                                        MouseLeftButtonUp="Palette_MouseLeftButtonUp">
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="{Binding PrimaryLine}" FontWeight="SemiBold" FontSize="11"/>
+                                                                        <TextBlock Text="{Binding SecondaryLine}" FontSize="10"
+                                                                                   Foreground="{Binding BuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </Border>
+                        <GridSplitter Grid.Column="1" Style="{StaticResource VerticalGridSplitterStyle}"/>
+                        <ScrollViewer Grid.Column="2" x:Name="ScheduleGridHost"
+                                      HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                      AllowDrop="True" DragOver="ScheduleGridHost_DragOver"
+                                      ToolTip="Клик — выбрать ячейку; Ctrl+колёсико — масштаб; при перетаскивании — колёсико или край сетки для прокрутки">
+                            <Border Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                <Border.LayoutTransform>
+                                    <ScaleTransform ScaleX="{Binding GridZoom}" ScaleY="{Binding GridZoom}"/>
+                                </Border.LayoutTransform>
+                                <StackPanel>
+                                <views:ConstructorDayGridView
+                                    Visibility="{Binding IsAllClassesDayMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"
+                                    DataContext="{Binding}"/>
+                                <views:ConstructorWeekGridView
+                                    Visibility="{Binding IsAllClassesWeekMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"
+                                    DataContext="{Binding}"/>
+                                <StackPanel Visibility="{Binding IsSingleClassWeekMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                    <TextBlock Margin="0,0,0,6" FontWeight="SemiBold" FontSize="13"
+                                               Visibility="{Binding FocusClass, Converter={x:Static conv:NullToCollapsedConverter.Instance}}">
+                                        <Run Text="Неделя класса "/>
+                                        <Run Text="{Binding FocusClass.DisplayName, Mode=OneWay}"/>
+                                    </TextBlock>
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="72"/>
+                                            <ColumnDefinition Width="98"/>
+                                            <ColumnDefinition Width="98"/>
+                                            <ColumnDefinition Width="98"/>
+                                            <ColumnDefinition Width="98"/>
+                                            <ColumnDefinition Width="98"/>
+                                            <ColumnDefinition Width="98"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Урок" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1" Content="Пн" HorizontalAlignment="Stretch" Margin="1,0"
+                                                Command="{Binding OpenAllClassesDayCommand}" CommandParameter="0"
+                                                ToolTip="Все классы · понедельник" Cursor="Hand" FontSize="11" FontWeight="SemiBold"
+                                                Padding="4,2" MinHeight="0" MinWidth="0">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource SmallButtonStyle}">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <Button Grid.Column="2" Content="Вт" HorizontalAlignment="Stretch" Margin="1,0"
+                                                Command="{Binding OpenAllClassesDayCommand}" CommandParameter="1"
+                                                ToolTip="Все классы · вторник" Cursor="Hand" FontSize="11" FontWeight="SemiBold"
+                                                Padding="4,2" MinHeight="0" MinWidth="0">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource SmallButtonStyle}">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <Button Grid.Column="3" Content="Ср" HorizontalAlignment="Stretch" Margin="1,0"
+                                                Command="{Binding OpenAllClassesDayCommand}" CommandParameter="2"
+                                                ToolTip="Все классы · среда" Cursor="Hand" FontSize="11" FontWeight="SemiBold"
+                                                Padding="4,2" MinHeight="0" MinWidth="0">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource SmallButtonStyle}">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <Button Grid.Column="4" Content="Чт" HorizontalAlignment="Stretch" Margin="1,0"
+                                                Command="{Binding OpenAllClassesDayCommand}" CommandParameter="3"
+                                                ToolTip="Все классы · четверг" Cursor="Hand" FontSize="11" FontWeight="SemiBold"
+                                                Padding="4,2" MinHeight="0" MinWidth="0">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource SmallButtonStyle}">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <Button Grid.Column="5" Content="Пт" HorizontalAlignment="Stretch" Margin="1,0"
+                                                Command="{Binding OpenAllClassesDayCommand}" CommandParameter="4"
+                                                ToolTip="Все классы · пятница" Cursor="Hand" FontSize="11" FontWeight="SemiBold"
+                                                Padding="4,2" MinHeight="0" MinWidth="0">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource SmallButtonStyle}">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <Button Grid.Column="6" Content="Сб" HorizontalAlignment="Stretch" Margin="1,0"
+                                                Command="{Binding OpenAllClassesDayCommand}" CommandParameter="5"
+                                                ToolTip="Все классы · суббота" Cursor="Hand" FontSize="11" FontWeight="SemiBold"
+                                                Padding="4,2" MinHeight="0" MinWidth="0">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource SmallButtonStyle}">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding WeekGridRows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,2">
+                                                    <Grid.Style>
+                                                        <Style TargetType="Grid">
+                                                            <Setter Property="VerticalAlignment" Value="Top"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsBreakColumn}" Value="True">
+                                                                    <Setter Property="Margin" Value="0,0"/>
+                                                                    <Setter Property="Height" Value="14"/>
+                                                                    <Setter Property="MaxHeight" Value="14"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Grid.Style>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="72"/>
+                                                        <ColumnDefinition Width="588"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0" VerticalAlignment="Center" Margin="0,0,4,0"
+                                                            Background="#FFF7ED"
+                                                            Visibility="{Binding IsBreakColumn, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                                        <TextBlock Text="{Binding LessonTitle}" FontSize="8" FontWeight="SemiBold"
+                                                                   Foreground="#B45309"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,4,0"
+                                                                Visibility="{Binding IsBreakColumn, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}">
+                                                        <StackPanel.Style>
+                                                            <Style TargetType="StackPanel">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsDynamicPauseColumn}" Value="True">
+                                                                        <Setter Property="Background" Value="#ECFDF5"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </StackPanel.Style>
+                                                        <TextBlock Text="{Binding LessonTitle}" FontWeight="SemiBold" FontSize="11"/>
+                                                        <TextBlock Text="{Binding BellTimeDisplay}" FontSize="9"
+                                                                   Foreground="{StaticResource MutedTextBrush}"
+                                                                   Visibility="{Binding HasBellTime, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+                                                    </StackPanel>
+                                                    <ItemsControl Grid.Column="1" ItemsSource="{Binding Days}" VerticalAlignment="Top">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <UniformGrid Columns="6"/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Width="94" MaxWidth="94" Margin="2" Padding="4"
+                                                                        HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                                        AllowDrop="True" Cursor="Hand"
+                                                                        MouseLeftButtonDown="Cell_MouseLeftButtonDown"
+                                                                        MouseMove="Cell_MouseMove"
+                                                                        MouseLeftButtonUp="Cell_MouseLeftButtonUp"
+                                                                        DragOver="Cell_DragOver"
+                                                                        DragLeave="Cell_DragLeave"
+                                                                        Drop="Cell_Drop">
+                                                                    <Border.Style>
+                                                                        <Style TargetType="Border">
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                                            <Setter Property="MinHeight" Value="52"/>
+                                                                            <Setter Property="ToolTip" Value="Клик — редактировать; перетащите предмет слева"/>
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsBreakColumn}" Value="True">
+                                                                                    <Setter Property="Background" Value="#FFF7ED"/>
+                                                                                    <Setter Property="BorderBrush" Value="#FDE68A"/>
+                                                                                    <Setter Property="BorderThickness" Value="0.5"/>
+                                                                                    <Setter Property="Height" Value="12"/>
+                                                                                    <Setter Property="MinHeight" Value="12"/>
+                                                                                    <Setter Property="MaxHeight" Value="12"/>
+                                                                                    <Setter Property="Padding" Value="0"/>
+                                                                                    <Setter Property="Margin" Value="2,0"/>
+                                                                                    <Setter Property="AllowDrop" Value="False"/>
+                                                                                    <Setter Property="IsHitTestVisible" Value="False"/>
+                                                                                    <Setter Property="Cursor" Value="Arrow"/>
+                                                                                    <Setter Property="ToolTip" Value="{x:Null}"/>
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding IsDynamicPauseColumn}" Value="True">
+                                                                                    <Setter Property="Background" Value="#F0FDF4"/>
+                                                                                    <Setter Property="BorderBrush" Value="#86EFAC"/>
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding HasConflict}" Value="True">
+                                                                                    <Setter Property="Background" Value="#FEF2F2"/>
+                                                                                    <Setter Property="BorderBrush" Value="#DC2626"/>
+                                                                                    <Setter Property="BorderThickness" Value="2"/>
+                                                                                    <Setter Property="ToolTip">
+                                                                                        <Setter.Value>
+                                                                                            <ToolTip MaxWidth="340">
+                                                                                                <TextBlock Text="{Binding ConflictHint}" TextWrapping="Wrap"/>
+                                                                                            </ToolTip>
+                                                                                        </Setter.Value>
+                                                                                    </Setter>
+                                                                                </DataTrigger>
+                                                                                <MultiDataTrigger>
+                                                                                    <MultiDataTrigger.Conditions>
+                                                                                        <Condition Binding="{Binding HasRoomSharedWarning}" Value="True"/>
+                                                                                        <Condition Binding="{Binding HasConflict}" Value="False"/>
+                                                                                    </MultiDataTrigger.Conditions>
+                                                                                    <Setter Property="Background" Value="#FFFBEB"/>
+                                                                                    <Setter Property="BorderBrush" Value="#F59E0B"/>
+                                                                                    <Setter Property="BorderThickness" Value="2"/>
+                                                                                    <Setter Property="ToolTip">
+                                                                                        <Setter.Value>
+                                                                                            <ToolTip MaxWidth="340">
+                                                                                                <TextBlock Text="{Binding RoomSharedHint}" TextWrapping="Wrap"/>
+                                                                                            </ToolTip>
+                                                                                        </Setter.Value>
+                                                                                    </Setter>
+                                                                                </MultiDataTrigger>
+                                                                                <DataTrigger Binding="{Binding DragHintLevel}" Value="{x:Static models:DragHintLevel.Recommended}">
+                                                                                    <Setter Property="Background" Value="#DCFCE7"/>
+                                                                                    <Setter Property="BorderBrush" Value="#16A34A"/>
+                                                                                    <Setter Property="BorderThickness" Value="2"/>
+                                                                                    <Setter Property="ToolTip">
+                                                                                        <Setter.Value>
+                                                                                            <ToolTip MaxWidth="360">
+                                                                                                <TextBlock Text="{Binding DragHintMessage}" TextWrapping="Wrap"/>
+                                                                                            </ToolTip>
+                                                                                        </Setter.Value>
+                                                                                    </Setter>
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding DragHintLevel}" Value="{x:Static models:DragHintLevel.Caution}">
+                                                                                    <Setter Property="Background" Value="#FEF9C3"/>
+                                                                                    <Setter Property="BorderBrush" Value="#CA8A04"/>
+                                                                                    <Setter Property="BorderThickness" Value="2"/>
+                                                                                    <Setter Property="ToolTip">
+                                                                                        <Setter.Value>
+                                                                                            <ToolTip MaxWidth="360">
+                                                                                                <TextBlock Text="{Binding DragHintMessage}" TextWrapping="Wrap"/>
+                                                                                            </ToolTip>
+                                                                                        </Setter.Value>
+                                                                                    </Setter>
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding DragHintLevel}" Value="{x:Static models:DragHintLevel.Blocked}">
+                                                                                    <Setter Property="Background" Value="#FEE2E2"/>
+                                                                                    <Setter Property="BorderBrush" Value="#DC2626"/>
+                                                                                    <Setter Property="BorderThickness" Value="2"/>
+                                                                                    <Setter Property="ToolTip">
+                                                                                        <Setter.Value>
+                                                                                            <ToolTip MaxWidth="360">
+                                                                                                <TextBlock Text="{Binding DragHintMessage}" TextWrapping="Wrap"/>
+                                                                                            </ToolTip>
+                                                                                        </Setter.Value>
+                                                                                    </Setter>
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                                    <Setter Property="Background" Value="#EFF6FF"/>
+                                                                                    <Setter Property="BorderBrush" Value="#2563EB"/>
+                                                                                    <Setter Property="BorderThickness" Value="2.5"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Border.Style>
+                                                                    <ItemsControl ItemsSource="{Binding Parts}">
+                                                                        <ItemsControl.Style>
+                                                                            <Style TargetType="ItemsControl">
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding IsBreakColumn}" Value="True">
+                                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </ItemsControl.Style>
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <StackPanel Margin="0,0,0,1">
+                                                                                    <TextBlock Text="{Binding SubgroupLabel}" FontSize="8" FontWeight="Bold"
+                                                                                               Foreground="#64748B" HorizontalAlignment="Center"
+                                                                                               Visibility="{Binding SubgroupLabel, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                                                                    <TextBlock Text="{Binding SubjectName}" Foreground="#7C3AED"
+                                                                                               FontWeight="SemiBold" FontSize="9" TextAlignment="Center" TextWrapping="Wrap"/>
+                                                                                    <TextBlock Text="{Binding TeacherName}" Foreground="#0369A1"
+                                                                                               FontSize="9" TextAlignment="Center" TextWrapping="Wrap"/>
+                                                                                    <TextBlock Text="{Binding RoomLine}" FontSize="9" TextAlignment="Center" TextWrapping="Wrap"
+                                                                                               Foreground="{Binding RoomBuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                                                </StackPanel>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="Выберите класс в панели выше"
+                                               Foreground="{StaticResource MutedTextBrush}" FontSize="12"
+                                               Margin="0,12,0,0" HorizontalAlignment="Center"
+                                               Visibility="{Binding FocusClass, Converter={x:Static conv:InverseNullToCollapsedConverter.Instance}}"/>
+                                </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </ScrollViewer>
+                        </Grid>
+                </DockPanel>
+            </TabItem>
+
+            <TabItem Header="Период" ToolTip="Когда действует расписание: триместры, модули, чередование А/Б">
+                <controls:ScrollableTabContent Padding="12,8,12,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Background="#F0F9FF" BorderBrush="#BAE6FD" BorderThickness="1"
+                            CornerRadius="8" Padding="10,8" Margin="0,0,0,10">
+                        <TextBlock Text="{Binding PeriodOverlapHint}" FontSize="11" Foreground="#0369A1"
+                                   TextWrapping="Wrap" LineHeight="16"/>
+                    </Border>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="380" MinWidth="340"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Style="{StaticResource CrudFormPanelStyle}" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="Период действия расписания" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <Border Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,10">
+                                <TextBlock Text="{Binding PeriodFormHint}" Style="{StaticResource SidePanelHelpTextStyle}" Margin="0"/>
+                            </Border>
+                            <TextBlock Text="Название" Style="{StaticResource FormFieldLabelStyle}"/>
+                            <TextBox Text="{Binding PeriodName}" Margin="0,0,0,10"
+                                     ToolTip="Как период будет в списке — например: 1 модуль, I четверть"/>
+                            <TextBlock Text="Тип периода" Style="{StaticResource FormFieldLabelStyle}"/>
+                            <ComboBox SelectedValue="{Binding SelectedPeriodType}" SelectedValuePath="Tag" Margin="0,0,0,10"
+                                      ToolTip="Модуль — короткий период внутри триместра; при пересечении дат действует более короткий">
+                                <ComboBoxItem Content="Четверть" Tag="Quarter"/>
+                                <ComboBoxItem Content="Модуль" Tag="Module"/>
+                                <ComboBoxItem Content="Триместр" Tag="Trimester"/>
+                                <ComboBoxItem Content="Полугодие" Tag="HalfYear"/>
+                                <ComboBoxItem Content="Учебный год" Tag="Year"/>
+                            </ComboBox>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Дата начала" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <DatePicker Style="{StaticResource SidePanelDatePickerStyle}"
+                                                SelectedDate="{Binding PeriodStart}"
+                                                ToolTip="Первый день периода включительно"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Дата окончания" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <DatePicker Style="{StaticResource SidePanelDatePickerStyle}"
+                                                SelectedDate="{Binding PeriodEnd}"
+                                                ToolTip="Последний день периода включительно"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="Чередование шаблонов" Style="{StaticResource FormFieldLabelStyle}"/>
+                            <ComboBox SelectedValue="{Binding SelectedRecurrence}" SelectedValuePath="Tag" Margin="0,0,0,6"
+                                      ToolTip="Как выбирать шаблон недели на даты этого периода">
+                                <ComboBoxItem Content="Каждую неделю" Tag="EveryWeek"/>
+                                <ComboBoxItem Content="Через неделю (А/Б)" Tag="EveryOtherWeek"/>
+                            </ComboBox>
+                            <Border Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,12">
+                                <TextBlock Text="{Binding PeriodRecurrenceHint}" Style="{StaticResource SidePanelHelpTextStyle}" Margin="0"/>
+                            </Border>
+                            <Border Style="{StaticResource ToolbarButtonGroupStyle}" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource ToolbarGroupPrimaryItemStyle}"
+                                            Command="{Binding SavePeriodCommand}"
+                                            ToolTip="Добавить новый период или сохранить правки">
+                                        <TextBlock Text="{Binding SavePeriodLabel}" VerticalAlignment="Center"/>
+                                    </Button>
+                                    <Border Style="{StaticResource ToolbarGroupSeparatorStyle}"/>
+                                    <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                            Command="{Binding DeletePeriodCommand}"
+                                            ToolTip="Удалить выбранный период (Delete)">
+                                        <TextBlock Text="Удалить" VerticalAlignment="Center"/>
+                                    </Button>
+                                    <Border Style="{StaticResource ToolbarGroupSeparatorStyle}"/>
+                                    <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                            Command="{Binding CancelEditCommand}"
+                                            ToolTip="Сбросить форму для новой записи">
+                                        <TextBlock Text="Отмена" VerticalAlignment="Center"/>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <DataGrid Grid.Column="2" ItemsSource="{Binding Periods}" AutoGenerateColumns="False" IsReadOnly="True"
+                              Style="{StaticResource CrudDataGridStyle}"
+                              CanUserResizeColumns="True"
+                              SelectedItem="{Binding SelectedPeriod}"
+                              helpers:DataGridCrudBehaviors.EditRowCommand="{Binding EditPeriodRowCommand}"
+                              helpers:DataGridCrudBehaviors.DeleteRowCommand="{Binding DeletePeriodRowCommand}">
+                        <DataGrid.InputBindings>
+                            <KeyBinding Key="Delete" Command="{Binding DeletePeriodCommand}"/>
+                        </DataGrid.InputBindings>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow" BasedOn="{StaticResource CurriculumLoadDataGridRowStyle}">
+                                <Setter Property="ToolTip" Value="{Binding RowToolTip}"/>
+                            </Style>
+                        </DataGrid.RowStyle>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="40"
+                                                    HeaderTemplate="{StaticResource DataGridCheckboxHeaderTemplate}"
+                                                    CellTemplate="{StaticResource DataGridCheckboxCellTemplate}"/>
+                            <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="2*" MinWidth="100"/>
+                            <DataGridTextColumn Header="Тип" Binding="{Binding PeriodTypeDisplay}" Width="100" MinWidth="80"/>
+                            <DataGridTextColumn Header="С" Binding="{Binding StartDateDisplay}" Width="100" MinWidth="90"/>
+                            <DataGridTextColumn Header="По" Binding="{Binding EndDateDisplay}" Width="100" MinWidth="90"/>
+                            <DataGridTextColumn Header="Чередование" Binding="{Binding RecurrenceCycleDisplay}" Width="*" MinWidth="150">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="ToolTip" Value="{Binding RecurrenceCycleDisplay}"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="" Width="68" CellTemplate="{StaticResource DataGridRowActionsTemplate}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    </Grid>
+                </Grid>
+                </controls:ScrollableTabContent>
+            </TabItem>
+
+            <TabItem Header="Проверка норм" ToolTip="Замечания к сетке, СанПиН и сравнение нагрузки с программой">
+                <controls:ScrollableTabContent Padding="12,8,12,16">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Style="{StaticResource CrudFormPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Проверка сетки и нагрузки" FontWeight="SemiBold"/>
+                            <TextBlock Text="Слева — замечания к сетке (накладки и предупреждения). Справа — сверка часов в справочнике с типовой программой. Красное — накладка, жёлтое — замечание, синее — справка."
+                                       Style="{StaticResource FormFieldLabelStyle}" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <Border Background="#F0FDF4" BorderBrush="#BBF7D0" BorderThickness="1" CornerRadius="8"
+                                        Padding="10,6" Margin="0,0,8,0"
+                                        Visibility="{Binding HasComplianceFindings, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}">
+                                    <TextBlock Text="Замечаний к сетке нет" FontSize="12" FontWeight="SemiBold" Foreground="#15803D"/>
+                                </Border>
+                                <Border Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1" CornerRadius="8"
+                                        Padding="10,6" Margin="0,0,8,0"
+                                        Visibility="{Binding ComplianceErrorCount, Converter={x:Static conv:PositiveToVisibleConverter.Instance}}">
+                                    <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#B91C1C">
+                                        <Run Text="Накладок: "/>
+                                        <Run Text="{Binding ComplianceErrorCount, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </Border>
+                                <Border Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1" CornerRadius="8"
+                                        Padding="10,6" Margin="0,0,8,0"
+                                        Visibility="{Binding ComplianceWarningCount, Converter={x:Static conv:PositiveToVisibleConverter.Instance}}">
+                                    <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#B45309">
+                                        <Run Text="Замечаний: "/>
+                                        <Run Text="{Binding ComplianceWarningCount, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </Border>
+                                <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="8"
+                                        Padding="10,6" Margin="0,0,8,0"
+                                        Visibility="{Binding ComplianceInfoCount, Converter={x:Static conv:PositiveToVisibleConverter.Instance}}">
+                                    <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#1D4ED8">
+                                        <Run Text="Справок: "/>
+                                        <Run Text="{Binding ComplianceInfoCount, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </Border>
+                            </StackPanel>
+                            <WrapPanel>
+                                <Button Content="Проверить снова" Command="{Binding RefreshComplianceCommand}" Margin="0,0,0,8"
+                                        ToolTip="Пересчитать замечания по СанПиН и методике. Сетку не меняет."/>
+                            </WrapPanel>
+                            <TextBlock Text="Сверка «нагрузка ↔ сетка» — на вкладке «Сетка», панель «Сетка vs нагрузка». Часы по программе (ФОП) — в «Справочники → Нагрузка»."
+                                       FontSize="11" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding ComplianceActionMessage}" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="#1D4ED8" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                    <Grid Margin="0,8,0,0">
+                        <Border Style="{StaticResource DirectorySidePanelStyle}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Замечания к сетке" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBlock DockPanel.Dock="Top" Text="{Binding ComplianceSummary}" FontSize="11"
+                                           Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                <TextBlock DockPanel.Dock="Top" Text="{Binding ComplianceFilterSummary}" FontSize="11"
+                                           Foreground="#1D4ED8" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                                    <CheckBox Content="Накладки" IsChecked="{Binding ComplianceShowErrors}" Margin="0,0,10,4" VerticalAlignment="Center"/>
+                                    <CheckBox Content="Замечания" IsChecked="{Binding ComplianceShowWarnings}" Margin="0,0,10,4" VerticalAlignment="Center"/>
+                                    <CheckBox Content="Справки" IsChecked="{Binding ComplianceShowInfo}" Margin="0,0,10,4" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Класс:" VerticalAlignment="Center" Margin="0,0,4,4" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <ComboBox ItemsSource="{Binding ClassList}" SelectedItem="{Binding ComplianceFilterClass}"
+                                              Width="88" Margin="0,0,10,4" ToolTip="Показать замечания только для выбранного класса">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding DisplayName}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <TextBlock Text="Поиск:" VerticalAlignment="Center" Margin="0,0,4,4" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <TextBox Width="120" Text="{Binding ComplianceSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,10,4" ToolTip="Фильтр по тексту замечания"/>
+                                    <ComboBox Width="130" SelectedValue="{Binding ComplianceSortMode}" SelectedValuePath="Tag"
+                                              Margin="0,0,0,4" ToolTip="Сортировка списка">
+                                        <ComboBoxItem Content="Важность" Tag="Severity"/>
+                                        <ComboBoxItem Content="Класс и день" Tag="ClassDay"/>
+                                        <ComboBoxItem Content="Тип замечания" Tag="Code"/>
+                                    </ComboBox>
+                                </WrapPanel>
+                                <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                                    <CheckBox Content="Показать скрытые" IsChecked="{Binding ComplianceShowDismissed}" Margin="0,0,10,0"/>
+                                    <Button Content="Вернуть скрытые" Command="{Binding RestoreDismissedComplianceCommand}" Margin="0,0,8,0"
+                                            Visibility="{Binding ComplianceDismissedCount, Converter={x:Static conv:PositiveToVisibleConverter.Instance}}"/>
+                                    <Button Content="Сбросить фильтры" Command="{Binding ResetComplianceFiltersCommand}"/>
+                                </WrapPanel>
+                                <ListView ItemsSource="{Binding ComplianceIssues}" BorderThickness="0" Background="Transparent"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          HorizontalContentAlignment="Stretch">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="Padding" Value="0"/>
+                                            <Setter Property="Margin" Value="0,0,0,6"/>
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListViewItem">
+                                                        <ContentPresenter HorizontalAlignment="Stretch"/>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:ComplianceIssue}">
+                                            <Border CornerRadius="8" BorderThickness="1" Padding="10,8">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#EFF6FF"/>
+                                                        <Setter Property="BorderBrush" Value="#BFDBFE"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Severity}" Value="{x:Static models:ComplianceSeverity.Error}">
+                                                                <Setter Property="Background" Value="#FEF2F2"/>
+                                                                <Setter Property="BorderBrush" Value="#FECACA"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Severity}" Value="{x:Static models:ComplianceSeverity.Warning}">
+                                                                <Setter Property="Background" Value="#FFFBEB"/>
+                                                                <Setter Property="BorderBrush" Value="#FDE68A"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*" MinWidth="0"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0" CornerRadius="6" Padding="8,4" VerticalAlignment="Top" Margin="0,0,10,0">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#DBEAFE"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Severity}" Value="{x:Static models:ComplianceSeverity.Error}">
+                                                                        <Setter Property="Background" Value="#FEE2E2"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Severity}" Value="{x:Static models:ComplianceSeverity.Warning}">
+                                                                        <Setter Property="Background" Value="#FEF3C7"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock Text="{Binding SeverityLabel}" FontSize="10" FontWeight="SemiBold">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="#1D4ED8"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Severity}" Value="{x:Static models:ComplianceSeverity.Error}">
+                                                                            <Setter Property="Foreground" Value="#B91C1C"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Severity}" Value="{x:Static models:ComplianceSeverity.Warning}">
+                                                                            <Setter Property="Foreground" Value="#B45309"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1">
+                                                        <StackPanel.InputBindings>
+                                                            <MouseBinding MouseAction="LeftClick"
+                                                                          Command="{Binding DataContext.OpenComplianceIssueCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                                          CommandParameter="{Binding}"/>
+                                                        </StackPanel.InputBindings>
+                                                        <StackPanel.Style>
+                                                            <Style TargetType="StackPanel">
+                                                                <Setter Property="Cursor" Value="Hand"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding CanNavigate}" Value="False">
+                                                                        <Setter Property="Cursor" Value="Arrow"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </StackPanel.Style>
+                                                        <TextBlock Text="{Binding ContextLine}" FontSize="11" FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource TextBrush}" TextWrapping="Wrap" Margin="0,0,0,4"
+                                                                   Visibility="{Binding HasContext, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+                                                        <TextBlock Text="{Binding Message}" FontSize="12" TextWrapping="Wrap"
+                                                                   Foreground="{StaticResource TextBrush}" LineHeight="18"/>
+                                                        <TextBlock Text="{Binding NavigationHint}" FontSize="11" FontWeight="SemiBold"
+                                                                   Foreground="#1D4ED8" Margin="0,6,0,0"
+                                                                   Visibility="{Binding CanNavigate, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+                                                    </StackPanel>
+                                                    <Button Grid.Column="2" Content="✕" Width="24" Height="24" Padding="0" Margin="4,0,0,0"
+                                                            VerticalAlignment="Top" ToolTip="Скрыть из списка"
+                                                            Command="{Binding DataContext.DismissComplianceIssueCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                            CommandParameter="{Binding}"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+                </DockPanel>
+                </controls:ScrollableTabContent>
+            </TabItem>
+
+            <TabItem Header="Графики Сивкова"
+                     ToolTip="Сумма баллов Сивкова по дням для каждого класса текущего шаблона">
+                <controls:ScrollableTabContent Padding="12,8,12,16">
+                    <DockPanel LastChildFill="True">
+                        <Border DockPanel.Dock="Top" Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="{Binding SivkovChartsHint}" Style="{StaticResource SidePanelHelpTextStyle}"/>
+                                <TextBlock Text="{Binding SivkovChartsSummary}" FontWeight="SemiBold"
+                                           Foreground="#1E40AF" Margin="0,6,0,0" FontSize="12"/>
+                            </StackPanel>
+                        </Border>
+                        <Border DockPanel.Dock="Top" Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1"
+                                CornerRadius="6" Padding="8,6" Margin="0,0,0,10"
+                                Visibility="{Binding HasClassWorkloadCharts, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}">
+                            <TextBlock Text="Нет данных для графиков — выберите шаблон недели и разложите уроки."
+                                       FontSize="11" Foreground="#92400E" TextWrapping="Wrap"/>
+                        </Border>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding ClassWorkloadCharts}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Width="504" Margin="0,0,12,12" Padding="12,10"
+                                                CornerRadius="10" Background="#F8FAFC" BorderThickness="1">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasDailyOverload}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="#F59E0B"/>
+                                                            <Setter Property="Background" Value="#FFFBEB"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <StackPanel>
+                                                <Grid Margin="0,0,0,6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding ClassName}"
+                                                               FontWeight="SemiBold" FontSize="13"/>
+                                                    <TextBlock Grid.Column="1" Text="⚠ день" FontSize="10"
+                                                               Foreground="#B45309" FontWeight="SemiBold"
+                                                               VerticalAlignment="Center"
+                                                               Visibility="{Binding HasDailyOverload, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}"/>
+                                                </Grid>
+                                                <TextBlock Text="{Binding SummaryLine}" FontSize="10"
+                                                           Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,8"/>
+                                                <controls:WeeklyLoadChartSurface Points="{Binding Points}"
+                                                                                   PolylinePoints="{Binding PolylinePoints}"
+                                                                                   PlotWidth="480" PlotHeight="120"
+                                                                                   IsLarge="True"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </controls:ScrollableTabContent>
+            </TabItem>
+
+            <TabItem Header="Календарь" ToolTip="Каникулы, праздники, субботы">
+                <controls:ScrollableTabContent Padding="12,8,12,16">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Style="{StaticResource CrudFormPanelStyle}" MaxWidth="520" HorizontalAlignment="Left">
+                        <StackPanel>
+                            <TextBlock Text="Учебный календарь" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <Border Style="{StaticResource SidePanelHelpBoxStyle}" Margin="0,0,0,10">
+                                <TextBlock Text="{Binding CalendarFormHint}" Style="{StaticResource SidePanelHelpTextStyle}" Margin="0"/>
+                            </Border>
+                            <TextBlock Text="Тип события" Style="{StaticResource FormFieldLabelStyle}"/>
+                            <ComboBox SelectedValue="{Binding SelectedCalType}" SelectedValuePath="Tag" Margin="0,0,0,10"
+                                      ToolTip="Праздник — один день; каникулы — диапазон; суббота с уроками — компенсация">
+                                <ComboBoxItem Content="Праздник / выходной" Tag="Holiday"/>
+                                <ComboBoxItem Content="Каникулы" Tag="Vacation"/>
+                                <ComboBoxItem Content="Компенсационная суббота" Tag="Compensation"/>
+                            </ComboBox>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Дата начала" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <DatePicker Style="{StaticResource SidePanelDatePickerStyle}"
+                                                SelectedDate="{Binding CalStartDate}"
+                                                ToolTip="Первый день события — для праздника это и есть нужная дата"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Дата окончания" Style="{StaticResource FormFieldLabelStyle}"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <DatePicker Grid.Column="0" Style="{StaticResource SidePanelDatePickerStyle}"
+                                                    SelectedDate="{Binding CalEndDate}"
+                                                    ToolTip="Для каникул — последний день; для одного праздника оставьте пустым"/>
+                                        <Button Grid.Column="1" Content="Очистить"
+                                                Command="{Binding ClearCalEndDateCommand}"
+                                                Style="{StaticResource SmallButtonStyle}"
+                                                Margin="6,0,0,0" VerticalAlignment="Center"
+                                                ToolTip="Один день вместо периода — сбросить дату окончания"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="Заметка" Style="{StaticResource FormFieldLabelStyle}"/>
+                            <TextBox Text="{Binding CalNote}" Margin="0,0,0,10"
+                                     ToolTip="Подпись для себя — например «Осенние каникулы» или «День учителя»"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12"
+                                        Visibility="{Binding IsCalDonorDayVisible, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                                <TextBlock Text="Перенос с дня:" VerticalAlignment="Center" Margin="0,0,8,0"
+                                           Style="{StaticResource FormFieldLabelStyle}"
+                                           ToolTip="С какого буднего дня берётся расписание на компенсационную субботу"/>
+                                <ComboBox Width="52" SelectedIndex="{Binding CalDonorDayIndex}"
+                                          ToolTip="День недели, с которого переносятся уроки">
+                                    <ComboBoxItem Content="Пн"/>
+                                    <ComboBoxItem Content="Вт"/>
+                                    <ComboBoxItem Content="Ср"/>
+                                    <ComboBoxItem Content="Чт"/>
+                                    <ComboBoxItem Content="Пт"/>
+                                    <ComboBoxItem Content="Сб"/>
+                                </ComboBox>
+                            </StackPanel>
+                            <Border Style="{StaticResource ToolbarButtonGroupStyle}" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource ToolbarGroupPrimaryItemStyle}"
+                                            Command="{Binding SaveCalendarCommand}"
+                                            ToolTip="Добавить событие или сохранить правки">
+                                        <TextBlock Text="{Binding SaveCalendarLabel}" VerticalAlignment="Center"/>
+                                    </Button>
+                                    <Border Style="{StaticResource ToolbarGroupSeparatorStyle}"/>
+                                    <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                            Command="{Binding DeleteCalendarCommand}"
+                                            ToolTip="Удалить выбранное событие (Delete)">
+                                        <TextBlock Text="Удалить" VerticalAlignment="Center"/>
+                                    </Button>
+                                    <Border Style="{StaticResource ToolbarGroupSeparatorStyle}"/>
+                                    <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                            Command="{Binding CancelEditCommand}"
+                                            ToolTip="Очистить форму">
+                                        <TextBlock Text="Отмена" VerticalAlignment="Center"/>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <DataGrid ItemsSource="{Binding CalendarEntries}" AutoGenerateColumns="False" IsReadOnly="True"
+                              Style="{StaticResource CrudDataGridStyle}"
+                              SelectedItem="{Binding SelectedCalendarEntry}"
+                              helpers:DataGridCrudBehaviors.EditRowCommand="{Binding EditCalendarRowCommand}"
+                              helpers:DataGridCrudBehaviors.DeleteRowCommand="{Binding DeleteCalendarRowCommand}">
+                        <DataGrid.InputBindings>
+                            <KeyBinding Key="Delete" Command="{Binding DeleteCalendarCommand}"/>
+                        </DataGrid.InputBindings>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="40"
+                                                    HeaderTemplate="{StaticResource DataGridCheckboxHeaderTemplate}"
+                                                    CellTemplate="{StaticResource DataGridCheckboxCellTemplate}"/>
+                            <DataGridTextColumn Header="Тип" Binding="{Binding TypeDisplay}" Width="100"/>
+                            <DataGridTextColumn Header="С" Binding="{Binding StartDate}" Width="90"/>
+                            <DataGridTextColumn Header="По" Binding="{Binding EndDate}" Width="90"/>
+                            <DataGridTextColumn Header="Заметка" Binding="{Binding Note}" Width="*"/>
+                            <DataGridTemplateColumn Header="" Width="68" CellTemplate="{StaticResource DataGridRowActionsTemplate}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+                </controls:ScrollableTabContent>
+            </TabItem>
+        </TabControl>
+
+        <GridSplitter Grid.Row="1" Grid.Column="1" Style="{StaticResource VerticalGridSplitterStyle}"
+                      Visibility="{Binding IsGridFullscreen, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}"/>
+
+        <DockPanel Grid.Row="1" Grid.Column="2" Margin="0,8,0,0" LastChildFill="True"
+                   Visibility="{Binding IsGridFullscreen, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}">
+            <Border DockPanel.Dock="Bottom" Background="#F0F9FF" BorderBrush="#BAE6FD" BorderThickness="1"
+                    CornerRadius="8" Padding="8,6" Margin="0,8,0,0">
+                <TextBlock Text="{Binding ContextHelpTip}" FontSize="10" Foreground="#0369A1"
+                           TextWrapping="Wrap" LineHeight="14"/>
+            </Border>
+
+            <Border DockPanel.Dock="Top" Style="{StaticResource CrudFormPanelStyle}" Margin="0,0,0,8"
+                    Visibility="{Binding IsScheduleTab, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                <StackPanel>
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding CellEditorTitle}" FontWeight="SemiBold"
+                                   TextWrapping="Wrap" VerticalAlignment="Center"
+                                   ToolTip="Укажите предмет и учителя; кабинет — если нужен для урока"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
+                            <TextBlock Text="П/г" VerticalAlignment="Center" Margin="0,0,4,0"
+                                       FontSize="11" Foreground="{StaticResource MutedTextBrush}"/>
+                            <ComboBox Width="44" SelectedIndex="{Binding SelectedSubgroupIndex}"
+                                      ToolTip="Переключите 1 или 2, заполните поля и сохраните — обе подгруппы останутся в одной ячейке">
+                                <ComboBoxItem Content="1"/>
+                                <ComboBoxItem Content="2"/>
+                            </ComboBox>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="{Binding SubgroupEditorHint}" FontSize="10" Foreground="#1D4ED8"
+                               TextWrapping="Wrap" Margin="0,0,0,6"
+                               Visibility="{Binding SubgroupEditorHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                    <Border Style="{StaticResource ConstructorAccentFieldShellStyle}" Background="#F5F3FF">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="4"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" CornerRadius="6,0,0,6"
+                                    Background="{StaticResource ConstructorSubjectAccentBrush}"/>
+                            <StackPanel Grid.Column="1" Margin="8,6,8,6">
+                                <TextBlock Text="Предмет" Style="{StaticResource ConstructorAccentFieldLabelStyle}"
+                                           Foreground="{StaticResource ConstructorSubjectAccentBrush}"/>
+                                <ComboBox ItemsSource="{Binding SubjectList}" DisplayMemberPath="Name"
+                                          Style="{StaticResource ConstructorAccentFieldComboStyle}"
+                                          SelectedItem="{Binding EditSubject, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="False"
+                                          IsTextSearchEnabled="True"
+                                          TextSearch.TextPath="Name"
+                                          ToolTip="Выберите предмет из списка (в открытом списке можно набирать буквы для поиска)"/>
+                                <TextBox Text="{Binding SubjectSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                           Margin="0,4,0,0"
+                                           ToolTip="Если предмета нет в списке — введите название вручную"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6"
+                                Visibility="{Binding SubjectSuggestionHint, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}">
+                        <TextBlock Text="{Binding SubjectSuggestionHint}" FontSize="10"
+                                   Foreground="#B45309" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                        <Button Content="Применить" Style="{StaticResource SmallButtonStyle}" Margin="6,0,0,0"
+                                Command="{Binding ApplySubjectSuggestionCommand}"
+                                ToolTip="Подставить предложенное название"/>
+                    </StackPanel>
+                    <Border Style="{StaticResource ConstructorAccentFieldShellStyle}" Background="#EFF6FF">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="4"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" CornerRadius="6,0,0,6"
+                                    Background="{StaticResource ConstructorTeacherAccentBrush}"/>
+                            <StackPanel Grid.Column="1" Margin="8,6,8,6">
+                                <TextBlock Text="Учитель" Style="{StaticResource ConstructorAccentFieldLabelStyle}"
+                                           Foreground="{StaticResource ConstructorTeacherAccentBrush}"/>
+                                <ComboBox ItemsSource="{Binding TeacherPickerView}" DisplayMemberPath="DisplayName"
+                                          Style="{StaticResource ConstructorAccentFieldComboStyle}"
+                                          SelectedItem="{Binding SelectedTeacherPickerItem}"
+                                          ToolTip="Сверху — учителя, привязанные к этому классу; ниже — остальные">
+                                    <ComboBox.GroupStyle>
+                                        <GroupStyle>
+                                            <GroupStyle.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource ConstructorTeacherAccentBrush}"
+                                                               Margin="4,4,0,0" FontSize="11"/>
+                                                </DataTemplate>
+                                            </GroupStyle.HeaderTemplate>
+                                        </GroupStyle>
+                                    </ComboBox.GroupStyle>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource ConstructorAccentFieldShellStyle}"
+                            Background="{Binding EditRoomBuildingColorHex, Converter={x:Static conv:HexToLightBrushConverter.Instance}, ConverterParameter=0.14}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="4"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" CornerRadius="6,0,0,6"
+                                    Background="{Binding EditRoomBuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                            <StackPanel Grid.Column="1" Margin="8,6,8,6">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Кабинет" Style="{StaticResource ConstructorAccentFieldLabelStyle}"
+                                               Foreground="{Binding EditRoomBuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                    <TextBlock Text=" (необязательно)" FontSize="11" Foreground="#64748B" Margin="4,0,0,0"
+                                               Visibility="{Binding IsEditRoomRequired, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}"/>
+                                </StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0" ItemsSource="{Binding RoomList}"
+                                          Style="{StaticResource ConstructorAccentFieldComboStyle}"
+                                          SelectedItem="{Binding EditRoom}"
+                                          ToolTip="{Binding EditRoomHint}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Border Style="{StaticResource BuildingListColorChipStyle}"
+                                                        Background="{Binding BuildingColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"/>
+                                                <TextBlock VerticalAlignment="Center">
+                                                    <Run Text="{Binding Number}"/>
+                                                    <Run Text=" · "/>
+                                                    <Run Text="{Binding BuildingName}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                    <Button Grid.Column="1" Content="Убрать"
+                                            Command="{Binding ClearEditRoomCommand}"
+                                            Style="{StaticResource SmallButtonStyle}"
+                                            Margin="6,0,0,0" VerticalAlignment="Center"
+                                            Visibility="{Binding EditRoom, Converter={x:Static conv:NullToCollapsedConverter.Instance}}"
+                                            ToolTip="Снять кабинет с урока (прогулка, дин. пауза и др.)"/>
+                                </Grid>
+                                <TextBlock Text="{Binding EditRoomHint}" FontSize="10"
+                                           Foreground="{StaticResource MutedTextBrush}"
+                                           TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1"
+                            CornerRadius="6" Padding="6,4" Margin="0,0,0,6"
+                            Visibility="{Binding HasEditConflict, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                        <StackPanel>
+                            <TextBlock Foreground="#B91C1C" FontWeight="SemiBold" FontSize="10" TextWrapping="Wrap">
+                                <Run Text="⚠ "/>
+                                <Run Text="{Binding EditConflictSummary}"/>
+                            </TextBlock>
+                            <ItemsControl ItemsSource="{Binding EditConflictMessages}" Margin="0,2,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" FontSize="10" Foreground="#991B1B"
+                                                   TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1"
+                            CornerRadius="6" Padding="6,4" Margin="0,0,0,6"
+                            Visibility="{Binding HasEditRoomSharedWarning, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                        <StackPanel>
+                            <TextBlock Foreground="#92400E" FontWeight="SemiBold" FontSize="10" TextWrapping="Wrap">
+                                <Run Text="🏃 "/>
+                                <Run Text="{Binding EditRoomSharedSummary}"/>
+                            </TextBlock>
+                            <ItemsControl ItemsSource="{Binding EditRoomSharedMessages}" Margin="0,2,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" FontSize="10" Foreground="#78350F"
+                                                   TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#FFFBEB" BorderBrush="#FDE68A" BorderThickness="1"
+                            CornerRadius="6" Padding="6,4" Margin="0,0,0,6"
+                            Visibility="{Binding HasEditTransitionWarning, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                        <StackPanel>
+                            <TextBlock Foreground="#92400E" FontWeight="SemiBold" FontSize="10" TextWrapping="Wrap">
+                                <Run Text="↔ "/>
+                                <Run Text="{Binding EditTransitionSummary}"/>
+                            </TextBlock>
+                            <ItemsControl ItemsSource="{Binding EditTransitionMessages}" Margin="0,2,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" FontSize="10" Foreground="#78350F"
+                                                   TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#FFF7ED" BorderBrush="#FDBA74" BorderThickness="1"
+                            CornerRadius="6" Padding="6,4" Margin="0,0,0,6"
+                            Visibility="{Binding HasEditUnavailabilityWarning, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                        <StackPanel>
+                            <TextBlock Foreground="#9A3412" FontWeight="SemiBold" FontSize="10" TextWrapping="Wrap">
+                                <Run Text="🕐 "/>
+                                <Run Text="{Binding EditUnavailabilitySummary}"/>
+                            </TextBlock>
+                            <ItemsControl ItemsSource="{Binding EditUnavailabilityMessages}" Margin="0,2,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" FontSize="10" Foreground="#7C2D12"
+                                                   TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource ToolbarButtonGroupStyle}" HorizontalAlignment="Stretch">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource ToolbarGroupPrimaryItemStyle}"
+                                    Command="{Binding SaveCellCommand}"
+                                    ToolTip="Записать урок в выбранную ячейку">
+                                <TextBlock Text="✓ Сохранить" VerticalAlignment="Center"/>
+                            </Button>
+                            <Border Style="{StaticResource ToolbarGroupSeparatorStyle}"/>
+                            <Button Style="{StaticResource ToolbarGroupItemStyle}"
+                                    Command="{Binding ClearCellCommand}"
+                                    ToolTip="Удалить все уроки в ячейке, включая обе подгруппы (Delete)">
+                                <TextBlock Text="⊘ Очистить" VerticalAlignment="Center"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource DirectorySidePanelStyle}" MinHeight="72"
+                    Visibility="{Binding IsScheduleTab, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                <DockPanel LastChildFill="True">
+                    <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Сетка vs нагрузка" FontWeight="SemiBold"
+                                       ToolTip="Сравнение часов в справочнике «Нагрузка» и уроков в текущей сетке"/>
+                            <TextBlock Text="{Binding BalancePanelSummary}" FontSize="10"
+                                       Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="{Binding BalanceToggleLabel}"
+                                Command="{Binding ToggleShowAllBalanceCommand}"
+                                Style="{StaticResource SmallButtonStyle}" VerticalAlignment="Top"
+                                ToolTip="По умолчанию — только предметы с расхождением"/>
+                    </Grid>
+                    <Border DockPanel.Dock="Top" Background="#F0FDF4" BorderBrush="#BBF7D0" BorderThickness="1"
+                            CornerRadius="6" Padding="6,4" Margin="0,0,0,6"
+                            Visibility="{Binding ShowBalanceEmptyHint, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                        <TextBlock Text="{Binding BalanceEmptyHint}" FontSize="10" Foreground="#166534" TextWrapping="Wrap"/>
+                    </Border>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding BalanceView}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,4" Padding="6,4" CornerRadius="6"
+                                            Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1">
+                                        <Border.InputBindings>
+                                            <MouseBinding MouseAction="LeftClick"
+                                                          Command="{Binding DataContext.OpenBalanceRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          CommandParameter="{Binding}"/>
+                                        </Border.InputBindings>
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasWarning}" Value="True">
+                                                        <Setter Property="Background" Value="#FFFBEB"/>
+                                                        <Setter Property="BorderBrush" Value="#FDE68A"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Label}" FontSize="10" FontWeight="SemiBold"
+                                                       TextWrapping="Wrap"/>
+                                            <TextBlock FontSize="10" Margin="0,1,0,0"
+                                                       Foreground="{StaticResource MutedTextBrush}">
+                                                <Run Text="{Binding HoursLine, Mode=OneWay}"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding DeltaLine}" FontSize="10" Foreground="#B45309"
+                                                       Margin="0,1,0,0"
+                                                       Visibility="{Binding DeltaLine, Converter={x:Static conv:EmptyToCollapsedConverter.Instance}}"/>
+                                            <TextBlock Text="{Binding NavigationHint}" FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="#1D4ED8" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </DockPanel>
+    </Grid>
+</UserControl>
