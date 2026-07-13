@@ -1,9 +1,10 @@
+using ArmZavuch.Services.Shell;
 using Velopack;
 
 namespace ArmZavuch;
 
 /// <summary>
-/// Точка входа WPF: Velopack-хуки до UI, затем запуск приложения.
+/// Точка входа WPF: Velopack-хуки, один экземпляр, затем запуск UI.
 /// </summary>
 internal static class Program
 {
@@ -14,7 +15,11 @@ internal static class Program
             .SetAutoApplyOnStartup(false)
             .Run();
 
-        var app = new App();
+        using var instance = SingleInstanceGuard.TryAcquire();
+        if (instance is null)
+            return;
+
+        var app = new App { SingleInstance = instance };
         app.InitializeComponent();
         app.Run();
     }

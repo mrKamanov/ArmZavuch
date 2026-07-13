@@ -35,6 +35,7 @@ vpk pack `
     --packVersion $Version `
     --packDir $PublishDir `
     --mainExe $MainExe `
+    --packTitle "Расписание.Про" `
     --outputDir $OutputDir
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

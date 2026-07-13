@@ -34,6 +34,9 @@ public partial class App : Application
 {
     private IHost? _host;
 
+    /// <summary>Единственный экземпляр; передаётся из <see cref="Program"/>.</summary>
+    internal SingleInstanceGuard? SingleInstance { get; init; }
+
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -82,6 +85,9 @@ public partial class App : Application
             ShutdownMode = ShutdownMode.OnMainWindowClose;
             mainWindow.Show();
             mainWindow.ContentRendered += OnMainWindowContentRendered;
+
+            var tray = _host.Services.GetRequiredService<AppTrayService>();
+            SingleInstance?.StartWatching(() => tray.Restore());
         }
         catch (Exception ex)
         {
