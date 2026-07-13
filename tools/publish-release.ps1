@@ -44,7 +44,7 @@ if ($env:GITHUB_TOKEN) {
     $repo = (Select-String -Path "$PSScriptRoot\..\src\ArmZavuch\Services\Update\UpdateChannelOptions.cs" -Pattern 'GitHubRepo = "([^"]+)"').Matches.Groups[1].Value
 
     if ($owner -eq "REPLACE_ME") {
-        Write-Warning "GitHubOwner не настроен — пропускаем vpk upload. Загрузите releases вручную."
+        Write-Warning "GitHubOwner ne nastroen - propuskaem vpk upload. Zagruzite releases vruchnuyu na GitHub."
         exit 0
     }
 
@@ -58,7 +58,7 @@ if ($env:GITHUB_TOKEN) {
     Write-Host "Uploaded to https://github.com/$owner/$repo/releases"
 }
 else {
-    Write-Host "GITHUB_TOKEN не задан — артефакты в $OutputDir"
+    Write-Host "GITHUB_TOKEN ne zadan - artefakty sobrany v $OutputDir"
 }
 
 Write-Host "Done."

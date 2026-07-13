@@ -45,18 +45,31 @@ public sealed class AppUpdateService
         if (!UpdateChannelOptions.IsConfigured)
             return new UpdateCheckResult.Skipped("Канал обновлений не настроен.");
 
-        if (!await IsOnlineAsync(cancellationToken))
-            return new UpdateCheckResult.Skipped("Нет подключения к интернету.");
-
         await MarkCheckedAsync();
 
         var velopackUpdate = await TryCheckVelopackAsync();
         if (velopackUpdate is not null)
             return new UpdateCheckResult.Available(velopackUpdate);
 
-        var githubRelease = await _github.GetLatestAsync(cancellationToken);
+        GitHubReleaseInfo? githubRelease;
+        try
+        {
+            githubRelease = await _github.GetLatestAsync(cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            return new UpdateCheckResult.Failed(
+                "Не удалось связаться с GitHub. Проверьте подключение к интернету, VPN или брандмауэр.");
+        }
+        catch (TaskCanceledException)
+        {
+            return new UpdateCheckResult.Failed("Превышено время ожидания ответа от GitHub. Попробуйте позже.");
+        }
+
         if (githubRelease is null)
-            return new UpdateCheckResult.Failed("Не удалось получить информацию о релизе на GitHub.");
+            return new UpdateCheckResult.Failed(
+                "На GitHub пока нет опубликованного релиза. " +
+                $"Создайте его на странице:\n{UpdateChannelOptions.ReleasesPageUrl}");
 
         if (!AppVersion.IsRemoteNewer(githubRelease.TagName))
             return new UpdateCheckResult.UpToDate($"Установлена актуальная версия {AppVersion.Current}.");
@@ -129,17 +142,4 @@ public sealed class AppUpdateService
             VelopackUpdate = velopackUpdate
         };
 
-    private static async Task<bool> IsOnlineAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            using var response = await client.GetAsync("https://api.github.com", cancellationToken);
-            return response.IsSuccessStatusCode;
-        }
-        catch
-        {
-            return false;
-        }
-    }
 }
