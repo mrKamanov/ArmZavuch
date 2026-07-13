@@ -8,10 +8,10 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>ArmZavuch</RootNamespace>
     <AssemblyName>ArmZavuch</AssemblyName>
-    <Version>1.0.2</Version>
-    <AssemblyVersion>1.0.2.0</AssemblyVersion>
-    <FileVersion>1.0.2.0</FileVersion>
-    <InformationalVersion>1.0.2</InformationalVersion>
+    <Version>1.0.3</Version>
+    <AssemblyVersion>1.0.3.0</AssemblyVersion>
+    <FileVersion>1.0.3.0</FileVersion>
+    <InformationalVersion>1.0.3</InformationalVersion>
     <AssemblyTitle>Расписание.Про</AssemblyTitle>
     <Product>Расписание.Про</Product>
     <ApplicationIcon>Resources\AppIcon.ico</ApplicationIcon>

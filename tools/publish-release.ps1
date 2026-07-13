@@ -11,7 +11,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "Publishing $PackId $Version..."
+# PowerShell 5.1 без BOM портит кириллицу в исходнике скрипта.
+# Читаем отображаемое имя из UTF-8 исходника приложения.
+$brandingPath = Join-Path $PSScriptRoot "..\src\ArmZavuch\AppBranding.cs"
+$brandingText = [System.IO.File]::ReadAllText((Resolve-Path $brandingPath), [System.Text.UTF8Encoding]::new($false))
+if ($brandingText -notmatch 'ProductName\s*=\s*"([^"]+)"') {
+    throw "Ne udalos prochitat AppBranding.ProductName iz $brandingPath"
+}
+$PackTitle = $Matches[1]
+
+Write-Host "Publishing $PackId $Version (title: $PackTitle)..."
 
 if (Test-Path $PublishDir) {
     Remove-Item -Recurse -Force $PublishDir
@@ -30,13 +39,16 @@ dotnet publish $ProjectPath `
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-vpk pack `
-    --packId $PackId `
-    --packVersion $Version `
-    --packDir $PublishDir `
-    --mainExe $MainExe `
-    --packTitle "Расписание.Про" `
-    --outputDir $OutputDir
+$vpkArgs = @(
+    "pack",
+    "--packId", $PackId,
+    "--packVersion", $Version,
+    "--packDir", $PublishDir,
+    "--mainExe", $MainExe,
+    "--packTitle", $PackTitle,
+    "--outputDir", $OutputDir
+)
+& vpk @vpkArgs
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
